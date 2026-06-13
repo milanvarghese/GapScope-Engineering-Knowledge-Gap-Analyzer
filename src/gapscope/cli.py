@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from .baseline import build_baseline
 from .config import load_seed, load_targets
+from .denoise import load_denoise_rules
 from .gaps import compute_gaps
 from .github_client import GitHubClient
 from .harvester import harvest_user
@@ -27,7 +28,8 @@ def run_sweep(args) -> int:
         except Exception as exc:  # one bad target must not abort the whole sweep
             print(f"  ! skipped {user}: {exc}")
 
-    gaps = compute_gaps(target_repos, baseline)
+    denoise_rules = load_denoise_rules("config/tool_denylist.yaml", "config/tool_groups.yaml")
+    gaps = compute_gaps(target_repos, baseline, denoise_rules)
     analyzed = len({r.owner for r in target_repos})
     generated_at = datetime.now(timezone.utc).isoformat()
     report = build_report(args.role, baseline, gaps, analyzed, generated_at)
@@ -47,6 +49,8 @@ def main(argv=None) -> int:
     sweep.add_argument("--baseline-seed", default="config/baseline_seed.yaml")
     sweep.add_argument("--out", default="data.json")
     sweep.add_argument("--top-n", type=int, default=10)
+    sweep.add_argument("--enrich", action="store_true", help="LLM enrichment (needs ANTHROPIC_API_KEY)")
+    sweep.add_argument("--research-top", type=int, default=15)
 
     args = parser.parse_args(argv)
     if args.cmd == "sweep":

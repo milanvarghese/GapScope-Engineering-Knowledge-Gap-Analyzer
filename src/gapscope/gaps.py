@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from .denoise import apply_denoise
 from .models import Baseline, Evidence, GapItem
 
 # Ranking weights: frequency (how many engineers use it) is the primary signal;
@@ -9,14 +10,15 @@ FREQ_WEIGHT = 0.7
 RECENCY_WEIGHT = 0.3
 
 
-def compute_gaps(target_repos, baseline: Baseline) -> list[GapItem]:
+def compute_gaps(target_repos, baseline: Baseline, denoise_rules: dict | None = None) -> list[GapItem]:
     """Gap = tools in targets' repos that are not in the baseline.
     Ranked by FREQ_WEIGHT*normalize(frequency) + RECENCY_WEIGHT*normalize(recency)."""
     base = set(baseline.tools)
 
     agg: dict[str, dict] = {}
     for repo in target_repos:
-        for tool in repo.tools:
+        tools = apply_denoise(repo.tools, denoise_rules) if denoise_rules else repo.tools
+        for tool in tools:
             tool = tool.lower()
             if tool in base:
                 continue

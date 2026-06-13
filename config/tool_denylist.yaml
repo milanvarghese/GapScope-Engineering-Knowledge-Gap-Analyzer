@@ -1,0 +1,11 @@
+# Packages that are not learnable skills — type stubs and build/lint tooling.
+exact:
+  - postcss
+  - autoprefixer
+  - eslint
+  - eslint-config-next
+  - prettier
+  - ts-node
+  - tsx
+prefix:
+  - "@types/"
