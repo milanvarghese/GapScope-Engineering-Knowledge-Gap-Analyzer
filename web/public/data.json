@@ -1,260 +1,58 @@
 {
   "meta": {
-    "generatedAt": "2026-06-13T08:00:00Z",
+    "generatedAt": "2026-06-13T19:55:22.776044+00:00",
     "role": "ai-engineer",
-    "targetsAnalyzed": 42
+    "targetsAnalyzed": 0
   },
   "baseline": {
     "tools": [
-      "Python", "Git", "Docker", "FastAPI", "PostgreSQL", "Redis",
-      "Next.js", "TypeScript", "React", "REST APIs", "pytest",
-      "GitHub Actions", "AWS S3", "Pydantic", "SQLAlchemy"
+      "anthropic",
+      "azure",
+      "beautifulsoup4",
+      "click",
+      "docker",
+      "fastapi",
+      "flask",
+      "gunicorn",
+      "httpx",
+      "itsdangerous",
+      "jinja2",
+      "joblib",
+      "layoutlm",
+      "markupsafe",
+      "matplotlib",
+      "mongodb",
+      "networkx",
+      "nltk",
+      "numpy",
+      "pandas",
+      "parquet",
+      "postgresql",
+      "py-clob-client",
+      "pydantic",
+      "pytest",
+      "python-dotenv",
+      "pytorch",
+      "pyyaml",
+      "regex",
+      "requests",
+      "schedule",
+      "scikit-learn",
+      "scipy",
+      "selenium",
+      "sklearn",
+      "streamlit",
+      "threadpoolctl",
+      "tqdm",
+      "web3",
+      "werkzeug",
+      "yolov3"
     ],
-    "methods": []
+    "methods": [
+      "document-understanding",
+      "hyperparameter-tuning",
+      "transfer-learning"
+    ]
   },
-  "gaps": [
-    {
-      "id": "langchain",
-      "name": "LangChain",
-      "kind": "tool",
-      "frequency": 31,
-      "recencyScore": 0.91,
-      "rankScore": 0.88,
-      "evidence": [
-        { "repo": "openai/openai-cookbook", "signal": "langchain mentioned in 12 notebooks" },
-        { "repo": "hwchase17/langchain", "signal": "direct dependency in ai-engineer job listings" },
-        { "repo": "AntonOsika/gpt-engineer", "signal": "agent chain orchestration pattern" }
-      ],
-      "research": {
-        "researched": true,
-        "summary": "LangChain is a framework for building LLM-powered applications via composable chains. Core abstractions include Runnables, PromptTemplates, and OutputParsers. The LCEL (LangChain Expression Language) interface is now the canonical way to compose chains. LangSmith provides observability. Key gap: most ai-engineer roles expect familiarity with retrieval chains (RAG) and agent tooling via LangChain Agents or LangGraph."
-      },
-      "docs": [
-        { "title": "LangChain Python Docs", "url": "https://python.langchain.com/docs/", "verified": true },
-        { "title": "LangChain Expression Language (LCEL)", "url": "https://python.langchain.com/docs/expression_language/", "verified": true },
-        { "title": "LangSmith Quickstart", "url": "https://docs.smith.langchain.com/", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Build a PDF Q&A bot using LCEL with a local vector store",
-          "Create a structured output extraction pipeline from news articles"
-        ],
-        "big": [
-          "Build a multi-step research agent that searches the web, summarises findings, and cites sources",
-          "Implement a customer-support RAG system with LangSmith tracing and eval harness"
-        ]
-      }
-    },
-    {
-      "id": "rag",
-      "name": "Retrieval-Augmented Generation (RAG)",
-      "kind": "methodology",
-      "frequency": 28,
-      "recencyScore": 0.89,
-      "rankScore": 0.85,
-      "evidence": [
-        { "repo": "microsoft/graphrag", "signal": "graph-based RAG architecture" },
-        { "repo": "run-llama/llama_index", "signal": "retrieval pipeline patterns" },
-        { "repo": "chroma-core/chroma", "signal": "vector store integration" }
-      ],
-      "research": {
-        "researched": true,
-        "summary": "RAG grounds LLM outputs in retrieved documents to reduce hallucination. The canonical pattern is: chunk documents → embed → store in vector DB → at query time, embed query → retrieve top-k chunks → prepend to prompt. Advanced variants include hybrid search (BM25 + dense), re-ranking (cross-encoders), contextual compression, and HyDE. Evaluation is done via metrics like faithfulness, answer relevance, and context precision (RAGAS framework)."
-      },
-      "docs": [
-        { "title": "RAGAS Evaluation Framework", "url": "https://docs.ragas.io/", "verified": true },
-        { "title": "LlamaIndex RAG Guide", "url": "https://docs.llamaindex.ai/en/stable/", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Index a set of markdown docs and answer questions with source citations",
-          "Compare BM25 vs dense retrieval on a small domain corpus"
-        ],
-        "big": [
-          "Build a production RAG pipeline with hybrid search, re-ranking, and RAGAS eval suite",
-          "Implement a GraphRAG system over a knowledge base with entity extraction"
-        ]
-      }
-    },
-    {
-      "id": "agent-orchestration",
-      "name": "Agent Orchestration",
-      "kind": "methodology",
-      "frequency": 24,
-      "recencyScore": 0.87,
-      "rankScore": 0.81,
-      "evidence": [
-        { "repo": "langchain-ai/langgraph", "signal": "stateful multi-agent graph patterns" },
-        { "repo": "microsoft/autogen", "signal": "multi-agent conversation patterns" },
-        { "repo": "crewAIInc/crewAI", "signal": "role-based agent collaboration" }
-      ],
-      "research": {
-        "researched": true,
-        "summary": "Agent orchestration refers to coordinating multiple LLM-powered agents that can use tools, hand off tasks, and maintain shared state. LangGraph models agents as state machines with typed state and conditional edges. Key patterns: ReAct loop, plan-and-execute, multi-agent handoffs, and human-in-the-loop checkpointing. Reliability is the main challenge — short circuits, tool-call validation, and structured outputs are essential."
-      },
-      "docs": [
-        { "title": "LangGraph Documentation", "url": "https://langchain-ai.github.io/langgraph/", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Build a ReAct agent with 3 tools (search, calculator, code exec)",
-          "Implement a plan-and-execute agent that breaks tasks into subtasks"
-        ],
-        "big": [
-          "Design a multi-agent coding assistant with planner, coder, reviewer, and test-runner agents",
-          "Build a research pipeline where specialized agents handle web search, summarization, and fact-checking"
-        ]
-      }
-    },
-    {
-      "id": "mcp-server",
-      "name": "MCP Server Development",
-      "kind": "methodology",
-      "frequency": 19,
-      "recencyScore": 0.95,
-      "rankScore": 0.78,
-      "evidence": [
-        { "repo": "modelcontextprotocol/servers", "signal": "official MCP server examples" },
-        { "repo": "modelcontextprotocol/python-sdk", "signal": "Python SDK usage patterns" }
-      ],
-      "research": {
-        "researched": true,
-        "summary": "The Model Context Protocol (MCP) is a standard for exposing tools, resources, and prompts from a server to any compliant LLM host. MCP servers expose a schema of tools with JSON Schema-typed parameters; the host handles tool-call dispatch. Building an MCP server typically involves the Python or TypeScript SDK, defining tool handlers, and publishing via stdio or SSE transport. Increasingly required for agentic integrations."
-      },
-      "docs": [
-        { "title": "MCP Python SDK", "url": "https://github.com/modelcontextprotocol/python-sdk", "verified": true },
-        { "title": "MCP Specification", "url": "https://modelcontextprotocol.io/specification", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Build an MCP server that wraps a public REST API (weather, finance) as a set of tools",
-          "Create an MCP server exposing a local SQLite database with query and write tools"
-        ],
-        "big": [
-          "Build a full-featured MCP server for a production codebase with search, read, patch, and test tools",
-          "Implement an MCP server with resource subscriptions and real-time event streaming"
-        ]
-      }
-    },
-    {
-      "id": "zod",
-      "name": "Zod",
-      "kind": "tool",
-      "frequency": 22,
-      "recencyScore": 0.82,
-      "rankScore": 0.74,
-      "evidence": [
-        { "repo": "colinhacks/zod", "signal": "TypeScript schema validation, 32k stars" },
-        { "repo": "trpc/trpc", "signal": "core dependency for type-safe APIs" }
-      ],
-      "research": {
-        "researched": true,
-        "summary": "Zod is a TypeScript-first schema validation library. Define a schema once, get both runtime validation and static TypeScript types inferred. Heavily used alongside Next.js API routes, tRPC, and LLM structured-output pipelines. The `.parse()` / `.safeParse()` pattern is idiomatic. Zod schemas can be serialized to JSON Schema, making them useful for defining LLM tool parameters."
-      },
-      "docs": [
-        { "title": "Zod Documentation", "url": "https://zod.dev/", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Add Zod validation to an existing Next.js API route",
-          "Use Zod with a structured-output LLM call to validate JSON extraction"
-        ],
-        "big": []
-      }
-    },
-    {
-      "id": "ruff",
-      "name": "Ruff",
-      "kind": "tool",
-      "frequency": 17,
-      "recencyScore": 0.84,
-      "rankScore": 0.65,
-      "evidence": [
-        { "repo": "astral-sh/ruff", "signal": "fastest Python linter, replacing flake8+black" },
-        { "repo": "astral-sh/uv", "signal": "co-shipped with uv in modern Python toolchains" }
-      ],
-      "research": {
-        "researched": false
-      },
-      "docs": [],
-      "projects": {
-        "small": [
-          "Replace flake8 + isort + black with ruff in a Python project",
-          "Add ruff to a pre-commit hook and GitHub Actions CI"
-        ],
-        "big": []
-      }
-    },
-    {
-      "id": "vector-dbs",
-      "name": "Vector Databases",
-      "kind": "tool",
-      "frequency": 21,
-      "recencyScore": 0.80,
-      "rankScore": 0.70,
-      "evidence": [
-        { "repo": "chroma-core/chroma", "signal": "lightweight embedding store for development" },
-        { "repo": "qdrant/qdrant", "signal": "production vector search engine" },
-        { "repo": "pgvector/pgvector", "signal": "vector search inside PostgreSQL" }
-      ],
-      "research": {
-        "researched": false
-      },
-      "docs": [
-        { "title": "Chroma Quickstart", "url": "https://docs.trychroma.com/", "verified": true },
-        { "title": "Qdrant Documentation", "url": "https://qdrant.tech/documentation/", "verified": true },
-        { "title": "pgvector README", "url": "https://github.com/pgvector/pgvector", "verified": true }
-      ],
-      "projects": {
-        "small": [],
-        "big": []
-      }
-    },
-    {
-      "id": "prompt-engineering",
-      "name": "Systematic Prompt Engineering",
-      "kind": "methodology",
-      "frequency": 26,
-      "recencyScore": 0.76,
-      "rankScore": 0.68,
-      "evidence": [
-        { "repo": "dair-ai/Prompt-Engineering-Guide", "signal": "22k stars, canonical reference" },
-        { "repo": "brexhq/prompt-engineering", "signal": "production prompt patterns from Brex" }
-      ],
-      "research": {
-        "researched": false
-      },
-      "docs": [
-        { "title": "Prompt Engineering Guide", "url": "https://www.promptingguide.ai/", "verified": true }
-      ],
-      "projects": {
-        "small": [
-          "Build a golden-set eval harness for an existing prompt with 20 labelled examples"
-        ],
-        "big": [
-          "Implement A/B testing infrastructure for prompt variants with statistical significance tracking"
-        ]
-      }
-    },
-    {
-      "id": "evals",
-      "name": "LLM Evaluation (Evals)",
-      "kind": "methodology",
-      "frequency": 20,
-      "recencyScore": 0.88,
-      "rankScore": 0.76,
-      "evidence": [
-        { "repo": "openai/evals", "signal": "evaluation framework patterns" },
-        { "repo": "explodinggradients/ragas", "signal": "RAG-specific eval metrics" }
-      ],
-      "research": {
-        "researched": false
-      },
-      "docs": [],
-      "projects": {
-        "small": [],
-        "big": []
-      }
-    }
-  ]
+  "gaps": []
 }
