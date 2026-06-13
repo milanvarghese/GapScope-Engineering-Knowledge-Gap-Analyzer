@@ -1,0 +1,12 @@
+# Your GitHub username — used to build the "what Milan knows" baseline from your repos.
+you: milanvarghese
+
+# Target engineers per role. Replace the examples with real usernames you admire.
+roles:
+  ai-engineer:
+    - example-ai-dev-1
+    - example-ai-dev-2
+  devops:
+    - example-devops-1
+  security:
+    - example-sec-1

@@ -1,0 +1,16 @@
+# Tools/methods you already know but may not have pushed to GitHub.
+# GapScope subtracts these so they never show up as gaps.
+tools:
+  - fastapi
+  - postgresql
+  - docker
+  - azure
+  - pytorch
+  - mongodb
+  - parquet
+  - yolov3
+  - layoutlm
+methods:
+  - transfer-learning
+  - hyperparameter-tuning
+  - document-understanding
