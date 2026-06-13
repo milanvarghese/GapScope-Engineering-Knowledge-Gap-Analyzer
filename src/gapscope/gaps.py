@@ -2,10 +2,16 @@ from datetime import datetime
 
 from .models import Baseline, Evidence, GapItem
 
+# Ranking weights: frequency (how many engineers use it) is the primary signal;
+# recency boosts but must not zero out a popular-but-older tool. Additive, not
+# multiplicative, precisely to avoid that zeroing.
+FREQ_WEIGHT = 0.7
+RECENCY_WEIGHT = 0.3
+
 
 def compute_gaps(target_repos, baseline: Baseline) -> list[GapItem]:
     """Gap = tools in targets' repos that are not in the baseline.
-    Ranked by normalize(frequency) * normalize(recency)."""
+    Ranked by FREQ_WEIGHT*normalize(frequency) + RECENCY_WEIGHT*normalize(recency)."""
     base = set(baseline.tools)
 
     agg: dict[str, dict] = {}
@@ -33,7 +39,7 @@ def compute_gaps(target_repos, baseline: Baseline) -> list[GapItem]:
         freq = len(entry["owners"])
         norm_freq = freq / max_freq
         norm_recency = 1.0 if span == 0 else (entry["recent"] - min_t).total_seconds() / span
-        rank = round(norm_freq * norm_recency, 4)
+        rank = round(FREQ_WEIGHT * norm_freq + RECENCY_WEIGHT * norm_recency, 4)
         evidence = [Evidence(repo=r, signal="dependency") for r in sorted(set(entry["repos"]))[:5]]
         items.append(
             GapItem(

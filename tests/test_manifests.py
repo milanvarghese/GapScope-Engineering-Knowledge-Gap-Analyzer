@@ -6,6 +6,7 @@ from gapscope.manifests import (
     parse_manifest,
     MANIFEST_NAMES,
 )
+from gapscope.manifests import is_dependency_dump
 
 
 def test_normalize_strips_version_extras_case():
@@ -58,3 +59,17 @@ def test_parse_manifest_dispatch():
     assert parse_manifest("requirements.txt", "flask\n") == {"flask"}
     assert parse_manifest("unknown.txt", "flask\n") == set()
     assert "package.json" in MANIFEST_NAMES
+
+
+def test_is_dependency_dump_detects_pip_freeze():
+    dump = "\n".join(f"pkg{i}==1.{i}" for i in range(100))
+    assert is_dependency_dump("requirements.txt", dump) is True
+
+
+def test_is_dependency_dump_false_for_small_requirements():
+    assert is_dependency_dump("requirements.txt", "flask\nfastapi==2.0\n") is False
+
+
+def test_is_dependency_dump_false_for_other_manifests():
+    big = "\n".join(f"pkg{i}==1.{i}" for i in range(100))
+    assert is_dependency_dump("package.json", big) is False

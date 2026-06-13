@@ -17,6 +17,9 @@ class GitHubClient:
             self._http = httpx.Client(base_url=API_BASE, headers=headers, timeout=30.0)
 
     def list_repos(self, username: str) -> list[dict]:
+        # Single page of up to 100 repos. Combined with sort=pushed (newest first)
+        # and the caller's top_n cap, the most-recent repos are always covered;
+        # users with >100 repos lose only the long-tail oldest ones (acceptable).
         resp = self._http.get(
             f"/users/{username}/repos",
             params={"sort": "pushed", "direction": "desc", "per_page": 100},

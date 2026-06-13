@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from .manifests import parse_manifest, MANIFEST_NAMES
+from .manifests import parse_manifest, MANIFEST_NAMES, is_dependency_dump
 
 
 @dataclass
@@ -16,12 +16,15 @@ def _parse_dt(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def harvest_user(client, username: str, top_n: int = 10, manifest_names=MANIFEST_NAMES):
+def harvest_user(client, username: str, top_n: int = 10, manifest_names=None):
     """Select a user's recent, non-fork, non-archived repos that have a dependency
     manifest, newest first, up to top_n. Returns ExtractedRepo per kept repo.
 
     `client.list_repos` already returns repos sorted by pushed-desc (recency-first).
+    pip-freeze/lockfile dump manifests are skipped (see manifests.is_dependency_dump).
     """
+    if manifest_names is None:
+        manifest_names = MANIFEST_NAMES
     out: list[ExtractedRepo] = []
     for repo in client.list_repos(username):
         if repo.get("fork") or repo.get("archived"):
@@ -31,8 +34,9 @@ def harvest_user(client, username: str, top_n: int = 10, manifest_names=MANIFEST
         tools: set[str] = set()
         for manifest in manifest_names:
             text = client.get_file(owner, name, manifest)
-            if text:
-                tools |= parse_manifest(manifest, text)
+            if not text or is_dependency_dump(manifest, text):
+                continue
+            tools |= parse_manifest(manifest, text)
         if not tools:
             continue
         out.append(

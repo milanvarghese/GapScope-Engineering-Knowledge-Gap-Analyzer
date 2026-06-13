@@ -29,14 +29,14 @@ def test_frequency_counts_distinct_owners_and_ranks():
 
     assert by_id["langchain"].frequency == 2
     assert by_id["mcp"].frequency == 1
-    # recency normalized across {2026-06-10, 2026-06-20}: langchain=0.0, mcp=1.0
     assert by_id["mcp"].recencyScore == 1.0
     assert by_id["langchain"].recencyScore == 0.0
-    # rankScore = norm_freq * norm_recency -> langchain = (2/2)*0.0 = 0.0 ; mcp = (1/2)*1.0 = 0.5
-    assert by_id["mcp"].rankScore == 0.5
-    assert by_id["langchain"].rankScore == 0.0
-    # sorted by rankScore desc -> mcp first
-    assert [g.id for g in gaps] == ["mcp", "langchain"]
+    # rankScore = 0.7*norm_freq + 0.3*norm_recency
+    # langchain: 0.7*(2/2) + 0.3*0.0 = 0.7 ; mcp: 0.7*(1/2) + 0.3*1.0 = 0.65
+    assert by_id["langchain"].rankScore == 0.7
+    assert by_id["mcp"].rankScore == 0.65
+    # popular-but-older beats merely-recent now
+    assert [g.id for g in gaps] == ["langchain", "mcp"]
 
 
 def test_single_gap_recency_is_one():

@@ -22,11 +22,15 @@ def run_sweep(args) -> int:
     usernames = cfg["roles"][args.role]
     target_repos = []
     for user in usernames:
-        target_repos.extend(harvest_user(client, user, top_n=args.top_n))
+        try:
+            target_repos.extend(harvest_user(client, user, top_n=args.top_n))
+        except Exception as exc:  # one bad target must not abort the whole sweep
+            print(f"  ! skipped {user}: {exc}")
 
     gaps = compute_gaps(target_repos, baseline)
+    analyzed = len({r.owner for r in target_repos})
     generated_at = datetime.now(timezone.utc).isoformat()
-    report = build_report(args.role, baseline, gaps, len(usernames), generated_at)
+    report = build_report(args.role, baseline, gaps, analyzed, generated_at)
     write_report(report, args.out)
 
     print(f"Wrote {args.out}: {len(gaps)} gaps from {len(usernames)} targets (role={args.role})")

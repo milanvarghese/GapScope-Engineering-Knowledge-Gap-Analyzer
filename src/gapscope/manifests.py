@@ -61,3 +61,23 @@ MANIFEST_NAMES = list(PARSERS.keys())
 def parse_manifest(filename: str, text: str) -> set[str]:
     parser = PARSERS.get(filename)
     return parser(text) if parser else set()
+
+
+def is_dependency_dump(filename: str, text: str) -> bool:
+    """True if a requirements.txt looks like a pip-freeze / lockfile dump
+    (many fully-pinned transitive deps) rather than hand-curated direct deps.
+    Such files misrepresent what a developer actually chose to use, so callers
+    skip them. Only requirements.txt is checked; direct-dependency manifests
+    (pyproject [project.dependencies], package.json) list only direct deps and
+    are trusted as-is."""
+    if filename != "requirements.txt":
+        return False
+    names = parse_requirements(text)
+    if len(names) < 80:
+        return False
+    pinned = sum(
+        1
+        for line in text.splitlines()
+        if (s := line.strip()) and not s.startswith(("#", "-")) and "==" in s
+    )
+    return pinned / max(len(names), 1) >= 0.9

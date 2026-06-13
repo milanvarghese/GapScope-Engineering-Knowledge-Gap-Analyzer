@@ -66,3 +66,15 @@ def test_harvest_respects_top_n():
     }
     out = harvest_user(FakeClient(repos, files), "alice", top_n=2)
     assert [r.full_name for r in out] == ["alice/a", "alice/b"]
+
+
+def test_harvest_skips_pip_freeze_dump_repo():
+    dump = "\n".join(f"pkg{i}==1.{i}" for i in range(100))
+    repos = {"alice": [_repo("colab", "2026-06-01T00:00:00Z"), _repo("real", "2026-05-01T00:00:00Z")]}
+    files = {
+        ("colab", "requirements.txt"): dump,
+        ("real", "requirements.txt"): "fastapi\nlangchain\n",
+    }
+    out = harvest_user(FakeClient(repos, files), "alice", top_n=10)
+    assert [r.full_name for r in out] == ["alice/real"]   # dump repo dropped (no real tools)
+    assert out[0].tools == {"fastapi", "langchain"}
