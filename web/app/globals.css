@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Literata:ital,opsz,wght@0,7..72,300;0,7..72,400;1,7..72,300;1,7..72,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #0f0f0d;
+  --canvas-2: #161613;
+  --canvas-3: #1e1e1a;
+  --canvas-4: #252520;
+  --ink: #f0ede6;
+  --ink-dim: #a09d96;
+  --ink-muted: #5c5a55;
+  --ink-faint: #2a2925;
+  --amber: #d4a832;
+  --amber-dim: #8a6c1e;
+  --amber-glow: #f0c84a;
+  --sage: #5c8c6e;
+  --sage-dim: #3a5c48;
+  --sage-glow: #7ab894;
+  --rule: #2a2925;
+  --rule-bright: #3d3c35;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--canvas);
+  min-height: 100vh;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.6;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--canvas-2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-faint);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
+}
+
+/* Score bar animation */
+@keyframes scoreExpand {
+  from { width: 0; }
+  to { width: var(--score-width); }
+}
+
+.score-bar-fill {
+  animation: scoreExpand 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--animation-delay, 0ms);
+  width: 0;
+}
+
+/* Staggered row entry */
+@keyframes rowEntry {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.gap-row-enter {
+  animation: rowEntry 0.35s ease-out forwards;
+  opacity: 0;
+}
+
+/* Expand panel */
+@keyframes expandPanel {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expand-panel {
+  animation: expandPanel 0.2s ease-out forwards;
+}
+
+/* Selection */
+::selection {
+  background: var(--amber-dim);
+  color: var(--ink);
+}
