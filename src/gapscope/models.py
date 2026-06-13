@@ -15,6 +15,7 @@ class GapItem(BaseModel):
     recencyScore: float
     rankScore: float
     evidence: list[Evidence] = Field(default_factory=list)
+    research: dict = Field(default_factory=dict)
     docs: list[dict] = Field(default_factory=list)
     projects: dict = Field(default_factory=lambda: {"small": [], "big": []})
 
