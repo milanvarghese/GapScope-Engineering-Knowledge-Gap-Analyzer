@@ -1,0 +1,3 @@
+# Model for LLM enrichment. Haiku keeps cost near-trivial (see spec §3).
+model: claude-haiku-4-5
+max_tokens: 1024
