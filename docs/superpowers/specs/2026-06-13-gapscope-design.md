@@ -66,8 +66,17 @@ Input is either:
 Config lives in a versioned repo file: `config/targets.yaml`. Editing it + re-running the
 sweep is how you change who's analyzed.
 
-**Defaults (tunable in config):** ~10–20 targets per role; top **10** repos per target ranked
-by `stars + recency`.
+**Defaults (tunable in config):** ~10–20 targets per role; top **10** repos per target.
+
+**Repo selection — recency-first.** Repos are ranked by **most recently pushed**, because the
+goal is discovering what these devs use *now* — stars bias toward old, famous repos with stale
+stacks. To cut noise, repos are filtered *before* ranking:
+
+- exclude **forks** and **archived** repos,
+- exclude repos with **no dependency manifest** (no `requirements.txt` / `package.json` /
+  `pyproject.toml` / … → no extractable tool signal).
+
+Stars are a **tiebreaker only** (optional), never the primary sort.
 
 ---
 
