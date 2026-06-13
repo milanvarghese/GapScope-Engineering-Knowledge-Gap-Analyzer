@@ -1,0 +1,62 @@
+name: Gap sweep
+
+# Runs the GapScope engine and commits a fresh web/public/data.json, which triggers
+# a Vercel redeploy. Scheduled runs are free (no LLM). Manual runs can opt into --enrich
+# (requires the ANTHROPIC_API_KEY repo secret).
+
+on:
+  workflow_dispatch:
+    inputs:
+      role:
+        description: "Role key from config/targets.yaml"
+        default: "ai-engineer"
+      enrich:
+        description: "LLM enrichment (needs ANTHROPIC_API_KEY secret)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gap-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gapscope
+        run: pip install -e .
+
+      - name: Run sweep
+        env:
+          # Built-in token is fine for public-repo reads at the Actions rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only needed when enrich is on; absent on scheduled (free) runs.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          ROLE="${{ github.event.inputs.role || 'ai-engineer' }}"
+          ENRICH=""
+          if [ "${{ github.event.inputs.enrich }}" = "true" ]; then ENRICH="--enrich"; fi
+          gapscope sweep --role "$ROLE" $ENRICH --out web/public/data.json
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/public/data.json
+          if git diff --staged --quiet; then
+            echo "No change in gap data."
+          else
+            git commit -m "chore: refresh gap data [skip ci]"
+            git push
+          fi
