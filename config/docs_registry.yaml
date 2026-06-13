@@ -1,0 +1,7 @@
+# Curated tool -> official docs URL. Deterministic, always correct for common tools.
+fastapi: https://fastapi.tiangolo.com
+langchain: https://python.langchain.com
+docker: https://docs.docker.com
+pytest: https://docs.pytest.org
+ruff: https://docs.astral.sh/ruff/
+pydantic: https://docs.pydantic.dev
