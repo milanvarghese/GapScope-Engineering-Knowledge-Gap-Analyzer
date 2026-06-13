@@ -1,4 +1,6 @@
+import json
 from gapscope.models import Evidence, GapItem, Baseline, Meta, GapReport
+from gapscope.report import build_report, write_report
 
 
 def test_gapitem_defaults_and_dump():
@@ -26,3 +28,19 @@ def test_gapreport_dump_shape():
     dumped = report.model_dump()
     assert set(dumped.keys()) == {"meta", "baseline", "gaps"}
     assert dumped["meta"]["targetsAnalyzed"] == 2
+
+
+def test_build_and_write_report(tmp_path):
+    baseline = Baseline(tools=["fastapi"], methods=[])
+    gaps = [GapItem(id="langchain", name="langchain", frequency=2, recencyScore=1.0, rankScore=1.0,
+                    evidence=[Evidence(repo="a/b", signal="dependency")])]
+    report = build_report("ai-engineer", baseline, gaps, targets_analyzed=3,
+                          generated_at="2026-06-13T00:00:00+00:00")
+    assert report.meta.role == "ai-engineer"
+    assert report.meta.targetsAnalyzed == 3
+
+    out = tmp_path / "data.json"
+    write_report(report, str(out))
+    loaded = json.loads(out.read_text(encoding="utf-8"))
+    assert loaded["gaps"][0]["id"] == "langchain"
+    assert loaded["meta"]["generatedAt"] == "2026-06-13T00:00:00+00:00"
