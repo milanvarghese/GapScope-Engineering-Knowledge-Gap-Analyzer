@@ -1,20 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { runAnalysis } from "./_helpers";
+import { runAnalysis, analyzeToReport } from "./_helpers";
 import type { ExtractedRepo } from "@/lib/engine/types";
 
 function erepo(owner: string, name: string, tools: string[]): ExtractedRepo {
   return { fullName: `${owner}/${name}`, owner, pushedAt: new Date("2026-06-01T00:00:00Z"), tools: new Set(tools) };
 }
 
+const stubDeps = {
+  harvest: async (u: string) => (u === "alice" ? [erepo("alice", "agent", ["fastapi", "langchain"])] : []),
+  readmesFor: async (_repos: ExtractedRepo[]) => [["alice/agent", "alice", "an agent project"]] as [string, string, string][],
+  inferReadme: async (text: string) => (text.includes("agent") ? ["mcp server"] : []),
+};
+
 describe("runAnalysis", () => {
   it("streams progress then a result with tool + methodology gaps", async () => {
-    const deps = {
-      harvest: async (u: string) => (u === "alice" ? [erepo("alice", "agent", ["fastapi", "langchain"])] : []),
-      readmesFor: async (_repos: ExtractedRepo[]) => [["alice/agent", "alice", "an agent project"]] as [string, string, string][],
-      inferReadme: async (text: string) => (text.includes("agent") ? ["mcp server"] : []),
-    };
     const events: any[] = [];
-    for await (const e of runAnalysis(deps, { baseline: { tools: ["fastapi"] }, handles: ["alice"], role: "ai-engineer" }))
+    for await (const e of runAnalysis(stubDeps, { baseline: { tools: ["fastapi"] }, handles: ["alice"], role: "ai-engineer" }))
       events.push(e);
     const result = events.find((e) => e.type === "result");
     expect(events.some((e) => e.type === "progress")).toBe(true);
@@ -22,5 +23,16 @@ describe("runAnalysis", () => {
     expect(ids).toContain("langchain");      // tool gap (fastapi filtered by baseline)
     expect(ids).toContain("mcp server");      // methodology gap
     expect(ids).not.toContain("fastapi");
+  });
+});
+
+describe("analyzeToReport", () => {
+  it("returns a report whose gaps include expected ids", async () => {
+    const report = await analyzeToReport(stubDeps, { baseline: { tools: ["fastapi"] }, handles: ["alice"], role: "ai-engineer" });
+    const ids = report.gaps.map((g) => g.id);
+    expect(ids).toContain("langchain");
+    expect(ids).toContain("mcp server");
+    expect(ids).not.toContain("fastapi");
+    expect(report.meta.targetsAnalyzed).toBe(1);
   });
 });

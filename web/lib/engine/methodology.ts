@@ -8,7 +8,12 @@ export async function inferMethodologies(
 ): Promise<[string, string][]> {
   // Run infer calls concurrently (limit 5), preserving input order.
   const perReadme = await mapPool(readmes, 5, async ([_fullName, owner, text]) => {
-    const tags = await infer(text);
+    let tags: string[];
+    try {
+      tags = await infer(text);
+    } catch {
+      return [] as [string, string][];
+    }
     return tags
       .map((tag) => tag.toLowerCase().split(/\s+/).join(" "))
       .filter(Boolean)

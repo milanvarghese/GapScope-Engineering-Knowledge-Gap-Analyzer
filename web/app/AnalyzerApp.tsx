@@ -2,11 +2,10 @@
 
 import { useState, useMemo } from "react";
 import type { Report } from "@/lib/types";
-import { uploadResume, analyzeStream } from "@/lib/client";
+import { uploadResume, analyze } from "@/lib/client";
 import ResumeUpload from "@/components/ResumeUpload";
 import SkillChips from "@/components/SkillChips";
 import TargetPicker from "@/components/TargetPicker";
-import ProgressFeed from "@/components/ProgressFeed";
 import Dashboard from "@/components/Dashboard";
 
 type Phase = "setup" | "running" | "results";
@@ -16,7 +15,6 @@ export default function AnalyzerApp() {
   const [skills, setSkills] = useState<string[]>([]);
   const [role, setRole] = useState("ai-engineer");
   const [handles, setHandles] = useState<string[]>([]);
-  const [progress, setProgress] = useState<string[]>([]);
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -39,20 +37,11 @@ export default function AnalyzerApp() {
   async function handleAnalyze() {
     if (!canAnalyze) return;
     setPhase("running");
-    setProgress([]);
     setError(null);
     try {
-      await analyzeStream(
-        { baseline: { tools: skills }, handles, role },
-        (e) => {
-          if (e.type === "progress" && e.message) {
-            setProgress((prev) => [...prev, e.message!]);
-          } else if (e.type === "result" && e.report) {
-            setReport(e.report as Report);
-            setPhase("results");
-          }
-        },
-      );
+      const report = await analyze({ baseline: { tools: skills }, handles, role });
+      setReport(report);
+      setPhase("results");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Analysis failed");
       setPhase("setup");
@@ -62,7 +51,6 @@ export default function AnalyzerApp() {
   function handleReset() {
     setPhase("setup");
     setReport(null);
-    setProgress([]);
     setError(null);
   }
 
@@ -90,7 +78,15 @@ export default function AnalyzerApp() {
       <div className="min-h-screen bg-[var(--canvas)] flex flex-col">
         <AppHeader />
         <main className="max-w-2xl mx-auto w-full px-5 py-12">
-          <ProgressFeed lines={progress} />
+          <div className="border border-[var(--rule-bright)] bg-[var(--canvas-2)] px-5 py-6 flex items-center gap-3">
+            <span className="relative flex h-2 w-2 flex-none">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--amber)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--amber-dim)]" />
+            </span>
+            <span className="font-mono text-xs text-[var(--ink-dim)]">
+              Analyzing {handles.length} engineer{handles.length !== 1 ? "s" : ""} — this can take up to a minute…
+            </span>
+          </div>
         </main>
       </div>
     );

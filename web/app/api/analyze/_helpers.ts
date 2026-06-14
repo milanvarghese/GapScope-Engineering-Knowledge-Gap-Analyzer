@@ -4,7 +4,7 @@ import { inferMethodologies, clusterMethodologies } from "@/lib/engine/methodolo
 import { DEFAULT_DENOISE } from "@/lib/engine/denoise-data";
 import { BOUNDS } from "@/lib/engine/config";
 import { mapPool } from "@/lib/engine/concurrency";
-import type { Gap } from "@/lib/types";
+import type { Gap, Report } from "@/lib/types";
 
 export type AnalyzeDeps = {
   harvest(user: string): Promise<ExtractedRepo[]>;
@@ -83,4 +83,16 @@ export async function* runAnalysis(
       gaps,
     },
   };
+}
+
+export async function analyzeToReport(
+  deps: AnalyzeDeps,
+  body: { baseline: { tools: string[] }; handles: string[]; role?: string },
+): Promise<Report> {
+  let report: Report | null = null;
+  for await (const e of runAnalysis(deps, body)) {
+    if (e.type === "result" && e.report) report = e.report as Report;
+  }
+  if (!report) throw new Error("analysis produced no report");
+  return report;
 }
