@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface BaselinePanelProps {
   tools: string[];
+  methods?: string[];
 }
 
 export default function BaselinePanel({ tools }: BaselinePanelProps) {

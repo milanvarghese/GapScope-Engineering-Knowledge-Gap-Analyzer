@@ -1,5 +1,5 @@
-import ClientPage from "./ClientPage";
+import AnalyzerApp from "./AnalyzerApp";
 
 export default function Page() {
-  return <ClientPage />;
+  return <AnalyzerApp />;
 }

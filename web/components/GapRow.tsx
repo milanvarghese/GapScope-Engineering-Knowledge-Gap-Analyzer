@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Gap } from "@/lib/types";
+import { fetchStudy } from "@/lib/client";
+import type { StudyCard } from "@/lib/client";
 
 interface GapRowProps {
   gap: Gap;
@@ -11,15 +13,49 @@ interface GapRowProps {
 
 export default function GapRow({ gap, rank, animationDelay }: GapRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [study, setStudy] = useState<StudyCard | null>(null);
+  const [studying, setStudying] = useState(false);
+  const fetchedRef = useRef(false);
 
   const isToolKind = gap.kind === "tool";
-  const verifiedDocs = gap.docs.filter((d) => d.verified);
-  const hasProjects = gap.projects.small.length > 0 || gap.projects.big.length > 0;
+
+  // Merge static docs with study docs (deduplicate by url)
+  const allDocs = study
+    ? [
+        ...gap.docs,
+        ...study.docs.filter((d) => !gap.docs.some((x) => x.url === d.url)),
+      ]
+    : gap.docs;
+  const verifiedDocs = allDocs.filter((d) => d.verified);
+
+  const effectiveProjects = study
+    ? {
+        small: [...gap.projects.small, ...study.projects.small],
+        big: [...gap.projects.big, ...study.projects.big],
+      }
+    : gap.projects;
+
+  const hasProjects =
+    effectiveProjects.small.length > 0 || effectiveProjects.big.length > 0;
   const hasContent =
     gap.research.researched ||
     gap.evidence.length > 0 ||
     verifiedDocs.length > 0 ||
-    hasProjects;
+    hasProjects ||
+    true; // always expandable to trigger study fetch
+
+  // When expanded and no summary yet, fetch study once
+  useEffect(() => {
+    if (!expanded) return;
+    if (gap.research?.summary) return; // already have it
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    setStudying(true);
+    fetchStudy(gap.id)
+      .then((card) => setStudy(card))
+      .catch(() => { /* silently ignore study errors */ })
+      .finally(() => setStudying(false));
+  }, [expanded, gap.id, gap.research?.summary]);
 
   const scorePercent = Math.round(gap.rankScore * 100);
 
@@ -125,7 +161,7 @@ export default function GapRow({ gap, rank, animationDelay }: GapRowProps) {
       </button>
 
       {/* Expanded detail panel */}
-      {expanded && hasContent && (
+      {expanded && (
         <div
           className={[
             "expand-panel border-t border-[var(--rule)] bg-[var(--canvas-2)]",
@@ -134,17 +170,28 @@ export default function GapRow({ gap, rank, animationDelay }: GapRowProps) {
           ].join(" ")}
         >
           <div className="px-6 py-5 space-y-5">
-            {/* Research summary */}
-            {gap.research.researched && gap.research.summary && (
-              <div>
-                <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
-                  Summary
-                </h3>
-                <p className="font-serif text-sm text-[var(--ink-dim)] leading-relaxed italic max-w-3xl">
-                  {gap.research.summary}
-                </p>
-              </div>
+            {/* Researching indicator */}
+            {studying && (
+              <span className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] animate-pulse">
+                researching…
+              </span>
             )}
+
+            {/* Summary — from gap.research if present, else from study card */}
+            {(() => {
+              const summary = gap.research?.summary ?? study?.summary;
+              if (!summary) return null;
+              return (
+                <div>
+                  <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
+                    Summary
+                  </h3>
+                  <p className="font-serif text-sm text-[var(--ink-dim)] leading-relaxed italic max-w-3xl">
+                    {summary}
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Grid: evidence + docs */}
             {(gap.evidence.length > 0 || verifiedDocs.length > 0) && (
@@ -204,13 +251,13 @@ export default function GapRow({ gap, rank, animationDelay }: GapRowProps) {
             {/* Projects */}
             {hasProjects && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {gap.projects.small.length > 0 && (
+                {effectiveProjects.small.length > 0 && (
                   <div>
                     <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
                       Starter Projects
                     </h3>
                     <ul className="space-y-1.5 list-none">
-                      {gap.projects.small.map((p, i) => (
+                      {effectiveProjects.small.map((p, i) => (
                         <li key={i} className="flex gap-2 items-start">
                           <span className="font-mono text-[var(--ink-muted)] text-xs mt-0.5 flex-none">
                             ◦
@@ -223,13 +270,13 @@ export default function GapRow({ gap, rank, animationDelay }: GapRowProps) {
                     </ul>
                   </div>
                 )}
-                {gap.projects.big.length > 0 && (
+                {effectiveProjects.big.length > 0 && (
                   <div>
                     <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
                       Capstone Projects
                     </h3>
                     <ul className="space-y-1.5 list-none">
-                      {gap.projects.big.map((p, i) => (
+                      {effectiveProjects.big.map((p, i) => (
                         <li key={i} className="flex gap-2 items-start">
                           <span
                             className={[

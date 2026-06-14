@@ -18,7 +18,7 @@ type AnalyzeBody = {
 };
 
 type ProgressEvent = { type: "progress"; message: string };
-type ResultEvent = { type: "result"; report: { meta: { generatedAt: string; role: string; targetsAnalyzed: number }; baseline: { tools: string[] }; gaps: Gap[] } };
+type ResultEvent = { type: "result"; report: { meta: { generatedAt: string; role: string; targetsAnalyzed: number }; baseline: { tools: string[]; methods: string[] }; gaps: Gap[] } };
 
 export async function* runAnalysis(
   deps: AnalyzeDeps,
@@ -60,7 +60,7 @@ export async function* runAnalysis(
         role: body.role ?? "",
         targetsAnalyzed: new Set(allRepos.map((r) => r.owner)).size,
       },
-      baseline: body.baseline,
+      baseline: { tools: body.baseline.tools, methods: [] },
       gaps,
     },
   };
