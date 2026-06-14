@@ -3,6 +3,7 @@ import { computeGaps } from "@/lib/engine/gaps";
 import { inferMethodologies, clusterMethodologies } from "@/lib/engine/methodology";
 import { DEFAULT_DENOISE } from "@/lib/engine/denoise-data";
 import { BOUNDS } from "@/lib/engine/config";
+import { mapPool } from "@/lib/engine/concurrency";
 import type { Gap } from "@/lib/types";
 
 export type AnalyzeDeps = {
@@ -27,22 +28,40 @@ export async function* runAnalysis(
   yield { type: "progress", message: "Reading targets…" };
 
   const handles = body.handles.slice(0, BOUNDS.MAX_PEOPLE);
-  const allRepos: ExtractedRepo[] = [];
 
-  for (const user of handles) {
-    try {
-      const repos = await deps.harvest(user);
-      yield { type: "progress", message: `harvested ${user} (${repos.length} repos)` };
-      allRepos.push(...repos);
-    } catch (err: any) {
-      yield { type: "progress", message: `skipped ${user}: ${err.message ?? String(err)}` };
+  // Harvest all users concurrently, collecting outcomes in order.
+  type Outcome =
+    | { ok: true; user: string; repos: ExtractedRepo[] }
+    | { ok: false; user: string; error: string };
+
+  const outcomes = await mapPool<string, Outcome>(
+    handles,
+    BOUNDS.CONCURRENCY,
+    async (user) => {
+      try {
+        const repos = await deps.harvest(user);
+        return { ok: true, user, repos };
+      } catch (err: any) {
+        return { ok: false, user, error: err.message ?? String(err) };
+      }
+    },
+  );
+
+  // Yield progress events in-order (same event shape as before), then collect repos.
+  const allRepos: ExtractedRepo[] = [];
+  for (const outcome of outcomes) {
+    if (outcome.ok) {
+      yield { type: "progress", message: `harvested ${outcome.user} (${outcome.repos.length} repos)` };
+      allRepos.push(...outcome.repos);
+    } else {
+      yield { type: "progress", message: `skipped ${outcome.user}: ${outcome.error}` };
     }
   }
 
   yield { type: "progress", message: "Inferring methodologies…" };
 
-  const readmesRaw = await deps.readmesFor(allRepos);
-  const readmes = readmesRaw.slice(0, BOUNDS.MAX_READMES);
+  // readmesFor already slices to MAX_READMES and fetches concurrently (in route.ts).
+  const readmes = await deps.readmesFor(allRepos);
   const tagged = await inferMethodologies(deps.inferReadme, readmes);
 
   const toolGaps = computeGaps(allRepos, body.baseline.tools, DEFAULT_DENOISE);

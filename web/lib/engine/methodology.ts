@@ -1,19 +1,20 @@
 import type { Gap } from "../types";
 import { round4 } from "./gaps";
+import { mapPool } from "./concurrency";
 
 export async function inferMethodologies(
   infer: (text: string) => Promise<string[]>,
   readmes: [string, string, string][],
 ): Promise<[string, string][]> {
-  const out: [string, string][] = [];
-  for (const [_fullName, owner, text] of readmes) {
+  // Run infer calls concurrently (limit 5), preserving input order.
+  const perReadme = await mapPool(readmes, 5, async ([_fullName, owner, text]) => {
     const tags = await infer(text);
-    for (const tag of tags) {
-      const norm = tag.toLowerCase().split(/\s+/).join(" ");
-      if (norm) out.push([owner, norm]);
-    }
-  }
-  return out;
+    return tags
+      .map((tag) => tag.toLowerCase().split(/\s+/).join(" "))
+      .filter(Boolean)
+      .map((norm): [string, string] => [owner, norm]);
+  });
+  return perReadme.flat();
 }
 
 export function clusterMethodologies(

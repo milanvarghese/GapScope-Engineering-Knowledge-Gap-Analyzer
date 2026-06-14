@@ -33,19 +33,39 @@ export async function analyzeStream(
   body: { baseline: { tools: string[] }; handles: string[]; role?: string },
   onEvent: (e: { type: string; message?: string; report?: Report }) => void,
 ): Promise<void> {
-  const r = await fetch("/api/analyze", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-  });
-  if (!r.ok || !r.body) throw new Error((await r.json().catch(() => ({}))).error ?? `analyze ${r.status}`);
-  const reader = r.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    const { events, buffer: b } = parseSSE(decoder.decode(value, { stream: true }), buffer);
-    buffer = b;
-    for (const e of events) onEvent(e);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 75_000);
+
+  try {
+    const r = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!r.ok || !r.body) throw new Error((await r.json().catch(() => ({}))).error ?? `analyze ${r.status}`);
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let sawResult = false;
+
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const { events, buffer: b } = parseSSE(decoder.decode(value, { stream: true }), buffer);
+      buffer = b;
+      for (const e of events) {
+        if (e.type === "result") sawResult = true;
+        onEvent(e);
+      }
+    }
+
+    if (!sawResult) {
+      throw new Error("Analysis did not complete (likely timed out). Try fewer people.");
+    }
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
