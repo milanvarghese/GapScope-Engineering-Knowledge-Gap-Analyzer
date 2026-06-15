@@ -88,6 +88,10 @@ Rules:
 - "positioning" compares the user's *signal* (e.g., researcher vs builder) to the expectedSignal for the goal role.
 - "projectGaps" are themes present in target engineers' projects that are absent from the user's work.
 - Resources must be real, official documentation URLs (docs.python.org, pytorch.org, etc.) — not blog posts or tutorials.
+- Return at MOST 14 concepts (the most important for the goal).
+- Return at MOST 8 learningPath items.
+- Return at MOST 4 projectGaps.
+- Keep "summary" to 2–3 sentences; each "whyNow"/"whatToLearn" to one sentence; at most 2 resources per learning-path item; "positioning.moves" at most 4.
 - Respond with valid JSON only, no markdown, no explanation.
 
 Output schema:
