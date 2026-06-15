@@ -1,4 +1,4 @@
-import type { Report } from "./types";
+import type { AnalysisResult } from "./result-types";
 
 export type StudyCard = {
   summary: string;
@@ -7,10 +7,11 @@ export type StudyCard = {
 };
 
 export async function analyze(body: {
-  baseline: { tools: string[] };
+  resumeSkills: string[];
+  githubUsername: string;
+  goal: string;
   handles: string[];
-  role?: string;
-}): Promise<Report> {
+}): Promise<AnalysisResult> {
   const r = await fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -2,20 +2,12 @@
 
 import { useState } from "react";
 
-const ROLES = [
-  { value: "ai-engineer", label: "AI Engineer" },
-  { value: "devops", label: "DevOps" },
-  { value: "security", label: "Security" },
-];
-
 interface TargetPickerProps {
-  role: string;
-  onRole: (r: string) => void;
   handles: string[];
   onHandles: (h: string[]) => void;
 }
 
-export default function TargetPicker({ role, onRole, handles, onHandles }: TargetPickerProps) {
+export default function TargetPicker({ handles, onHandles }: TargetPickerProps) {
   const [input, setInput] = useState("");
 
   function addHandle(raw: string) {
@@ -40,26 +32,6 @@ export default function TargetPicker({ role, onRole, handles, onHandles }: Targe
 
   return (
     <div className="space-y-5">
-      {/* Role selector */}
-      <div>
-        <label className="block font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
-          Target Role
-        </label>
-        <select
-          value={role}
-          onChange={(e) => onRole(e.target.value)}
-          className="w-full sm:w-auto bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 focus:outline-none focus:border-[var(--amber-dim)] transition-colors duration-150 appearance-none pr-8"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235c5a55'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-          aria-label="Select target role"
-        >
-          {ROLES.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* GitHub handles */}
       <div>
         <label className="block font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">

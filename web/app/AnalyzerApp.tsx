@@ -1,25 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import type { Report } from "@/lib/types";
+import { useState } from "react";
+import type { AnalysisResult } from "@/lib/result-types";
+import { GOAL_PRESETS } from "@/lib/engine/goals";
 import { uploadResume, analyze } from "@/lib/client";
 import ResumeUpload from "@/components/ResumeUpload";
 import SkillChips from "@/components/SkillChips";
 import TargetPicker from "@/components/TargetPicker";
-import Dashboard from "@/components/Dashboard";
 
 type Phase = "setup" | "running" | "results";
 
 export default function AnalyzerApp() {
   const [phase, setPhase] = useState<Phase>("setup");
   const [skills, setSkills] = useState<string[]>([]);
-  const [role, setRole] = useState("ai-engineer");
-  const [handles, setHandles] = useState<string[]>([]);
-  const [report, setReport] = useState<Report | null>(null);
+  const [githubUsername, setGithubUsername] = useState("");
+  const [goal, setGoal] = useState(GOAL_PRESETS[0].id);
+  const [handles, setHandles] = useState<string[]>(GOAL_PRESETS[0].defaultHandles);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const canAnalyze = skills.length > 0 && handles.length > 0;
+  const canAnalyze = skills.length > 0 && githubUsername.trim().length > 0 && handles.length > 0;
 
   async function handleUpload(file: File) {
     setUploading(true);
@@ -34,13 +35,19 @@ export default function AnalyzerApp() {
     }
   }
 
+  function handleGoalChange(newGoal: string) {
+    setGoal(newGoal);
+    const preset = GOAL_PRESETS.find((g) => g.id === newGoal);
+    if (preset) setHandles(preset.defaultHandles);
+  }
+
   async function handleAnalyze() {
     if (!canAnalyze) return;
     setPhase("running");
     setError(null);
     try {
-      const report = await analyze({ baseline: { tools: skills }, handles, role });
-      setReport(report);
+      const r = await analyze({ resumeSkills: skills, githubUsername: githubUsername.trim(), goal, handles });
+      setResult(r);
       setPhase("results");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Analysis failed");
@@ -50,12 +57,12 @@ export default function AnalyzerApp() {
 
   function handleReset() {
     setPhase("setup");
-    setReport(null);
+    setResult(null);
     setError(null);
   }
 
   // ── results ──────────────────────────────────────────────────────────────
-  if (phase === "results" && report) {
+  if (phase === "results" && result) {
     return (
       <div>
         {/* Back button strip */}
@@ -67,7 +74,11 @@ export default function AnalyzerApp() {
             ← New analysis
           </button>
         </div>
-        <Dashboard report={report} />
+        <div className="max-w-2xl mx-auto px-5 py-8">
+          <pre className="font-mono text-xs text-[var(--ink-dim)] whitespace-pre-wrap break-all">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
       </div>
     );
   }
@@ -119,15 +130,51 @@ export default function AnalyzerApp() {
           <SkillChips skills={skills} onChange={setSkills} />
         </section>
 
-        {/* Step 3: targets */}
+        {/* Step 3: GitHub username */}
         <section>
-          <SectionLabel index="03" title="Set analysis targets" />
-          <TargetPicker
-            role={role}
-            onRole={setRole}
-            handles={handles}
-            onHandles={setHandles}
+          <SectionLabel index="03" title="Your GitHub username" />
+          <input
+            type="text"
+            value={githubUsername}
+            onChange={(e) => setGithubUsername(e.target.value)}
+            placeholder="your-github-username"
+            aria-label="Your GitHub username"
+            className="w-full bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 placeholder-[var(--ink-muted)] focus:outline-none focus:border-[var(--amber-dim)] transition-colors duration-150"
           />
+        </section>
+
+        {/* Step 4: Goal */}
+        <section>
+          <SectionLabel index="04" title="Goal" />
+          <div className="space-y-3">
+            <select
+              value={goal}
+              onChange={(e) => handleGoalChange(e.target.value)}
+              aria-label="Select goal"
+              className="w-full bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 focus:outline-none focus:border-[var(--amber-dim)] transition-colors duration-150 appearance-none"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235c5a55'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: "2rem" }}
+            >
+              {GOAL_PRESETS.map((g) => (
+                <option key={g.id} value={g.id}>{g.label}</option>
+              ))}
+              <option value="__custom__">Other (free text)</option>
+            </select>
+            {goal === "__custom__" && (
+              <input
+                type="text"
+                placeholder="Describe your goal…"
+                aria-label="Custom goal"
+                onChange={(e) => setGoal(e.target.value)}
+                className="w-full bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 placeholder-[var(--ink-muted)] focus:outline-none focus:border-[var(--amber-dim)] transition-colors duration-150"
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Step 5: target handles */}
+        <section>
+          <SectionLabel index="05" title="Exemplar handles" />
+          <TargetPicker handles={handles} onHandles={setHandles} />
         </section>
 
         {/* Analyze button */}
@@ -142,7 +189,7 @@ export default function AnalyzerApp() {
                 : "border-[var(--rule-bright)] text-[var(--ink-muted)] cursor-not-allowed",
             ].join(" ")}
           >
-            {canAnalyze ? "Analyze →" : "Add skills and at least one handle"}
+            {canAnalyze ? "Analyze →" : "Add skills, your GitHub username, and at least one handle"}
           </button>
         </div>
       </main>
