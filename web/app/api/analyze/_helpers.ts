@@ -1,98 +1,93 @@
 import type { ExtractedRepo } from "@/lib/engine/types";
-import { computeGaps } from "@/lib/engine/gaps";
-import { inferMethodologies, clusterMethodologies } from "@/lib/engine/methodology";
-import { DEFAULT_DENOISE } from "@/lib/engine/denoise-data";
+import type { SynthesisInput } from "@/lib/engine/synthesis";
+import type { AnalysisResult } from "@/lib/result-types";
+import { presetById } from "@/lib/engine/goals";
 import { BOUNDS } from "@/lib/engine/config";
 import { mapPool } from "@/lib/engine/concurrency";
-import type { Gap, Report } from "@/lib/types";
 
-export type AnalyzeDeps = {
+export type GoalAnalysisDeps = {
   harvest(user: string): Promise<ExtractedRepo[]>;
-  readmesFor(repos: ExtractedRepo[]): Promise<[string, string, string][]>;
   inferReadme(text: string): Promise<string[]>;
+  synthesize(input: SynthesisInput): Promise<AnalysisResult>;
 };
 
-type AnalyzeBody = {
-  baseline: { tools: string[] };
+export type GoalAnalysisBody = {
+  resumeSkills: string[];
+  githubUsername: string;
+  goal: string;
   handles: string[];
-  role?: string;
 };
 
-type ProgressEvent = { type: "progress"; message: string };
-type ResultEvent = { type: "result"; report: { meta: { generatedAt: string; role: string; targetsAnalyzed: number }; baseline: { tools: string[]; methods: string[] }; gaps: Gap[] } };
+export async function runGoalAnalysis(
+  deps: GoalAnalysisDeps,
+  body: GoalAnalysisBody,
+): Promise<AnalysisResult> {
+  // 1. Harvest own repos → baseline tools + own projects
+  const ownRepos = await deps.harvest(body.githubUsername);
+  const ownTools = new Set<string>(body.resumeSkills.map((s) => s.toLowerCase().trim()).filter(Boolean));
+  for (const repo of ownRepos) {
+    for (const t of repo.tools) ownTools.add(t);
+  }
+  const baselineTools = Array.from(ownTools);
+  const yourProjects = ownRepos.map((r) => ({
+    name: r.fullName.split("/").pop()!,
+    description: r.description,
+  }));
 
-export async function* runAnalysis(
-  deps: AnalyzeDeps,
-  body: AnalyzeBody,
-): AsyncGenerator<ProgressEvent | ResultEvent> {
-  yield { type: "progress", message: "Reading targets…" };
-
+  // 2. Harvest each target handle (bounded to MAX_PEOPLE), concurrently
   const handles = body.handles.slice(0, BOUNDS.MAX_PEOPLE);
 
-  // Harvest all users concurrently, collecting outcomes in order.
-  type Outcome =
-    | { ok: true; user: string; repos: ExtractedRepo[] }
-    | { ok: false; user: string; error: string };
-
-  const outcomes = await mapPool<string, Outcome>(
+  const targetResults = await mapPool(
     handles,
     BOUNDS.CONCURRENCY,
-    async (user) => {
+    async (handle) => {
+      let repos: ExtractedRepo[] = [];
       try {
-        const repos = await deps.harvest(user);
-        return { ok: true, user, repos };
-      } catch (err: any) {
-        return { ok: false, user, error: err.message ?? String(err) };
+        repos = await deps.harvest(handle);
+      } catch {
+        repos = [];
       }
+      // Derive methodology tags from repo names+descriptions (no extra GitHub calls)
+      const summaryText = repos
+        .map((r) => `${r.fullName.split("/").pop()} ${r.description}`)
+        .join(". ");
+      let methodologies: string[] = [];
+      if (summaryText.trim()) {
+        try {
+          methodologies = await deps.inferReadme(summaryText);
+        } catch {
+          methodologies = [];
+        }
+      }
+      const tools = Array.from(
+        new Set(repos.flatMap((r) => Array.from(r.tools))),
+      );
+      const projects = repos.map((r) => ({
+        name: r.fullName.split("/").pop()!,
+        description: r.description,
+      }));
+      return { handle, tools, methodologies, projects };
     },
   );
 
-  // Yield progress events in-order (same event shape as before), then collect repos.
-  const allRepos: ExtractedRepo[] = [];
-  for (const outcome of outcomes) {
-    if (outcome.ok) {
-      yield { type: "progress", message: `harvested ${outcome.user} (${outcome.repos.length} repos)` };
-      allRepos.push(...outcome.repos);
-    } else {
-      yield { type: "progress", message: `skipped ${outcome.user}: ${outcome.error}` };
-    }
-  }
+  // 3. Build SynthesisInput
+  const preset = presetById(body.goal);
+  const expectedSignal =
+    preset?.expectedSignal ?? "strong engineer who ships and owns systems";
 
-  yield { type: "progress", message: "Inferring methodologies…" };
-
-  // readmesFor already slices to MAX_READMES and fetches concurrently (in route.ts).
-  const readmes = await deps.readmesFor(allRepos);
-  const tagged = await inferMethodologies(deps.inferReadme, readmes);
-
-  const toolGaps = computeGaps(allRepos, body.baseline.tools, DEFAULT_DENOISE);
-  const methodGaps = clusterMethodologies(tagged, []);
-  const gaps = [...toolGaps, ...methodGaps].sort((a, b) => {
-    if (b.rankScore !== a.rankScore) return b.rankScore - a.rankScore;
-    return b.frequency - a.frequency;
-  });
-
-  yield {
-    type: "result",
-    report: {
-      meta: {
-        generatedAt: new Date().toISOString(),
-        role: body.role ?? "",
-        targetsAnalyzed: new Set(allRepos.map((r) => r.owner)).size,
-      },
-      baseline: { tools: body.baseline.tools, methods: [] },
-      gaps,
-    },
+  const input: SynthesisInput = {
+    goal: body.goal,
+    expectedSignal,
+    baselineTools,
+    yourProjects,
+    targets: targetResults,
   };
-}
 
-export async function analyzeToReport(
-  deps: AnalyzeDeps,
-  body: { baseline: { tools: string[] }; handles: string[]; role?: string },
-): Promise<Report> {
-  let report: Report | null = null;
-  for await (const e of runAnalysis(deps, body)) {
-    if (e.type === "result" && e.report) report = e.report as Report;
-  }
-  if (!report) throw new Error("analysis produced no report");
-  return report;
+  // 4. Synthesize
+  const result = await deps.synthesize(input);
+
+  // Ensure targetsAnalyzed is set
+  result.targetsAnalyzed = targetResults.length;
+
+  return result;
 }

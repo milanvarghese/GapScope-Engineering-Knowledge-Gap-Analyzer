@@ -1,38 +1,151 @@
 import { describe, it, expect } from "vitest";
-import { runAnalysis, analyzeToReport } from "./_helpers";
+import { runGoalAnalysis } from "./_helpers";
 import type { ExtractedRepo } from "@/lib/engine/types";
+import type { AnalysisResult } from "@/lib/result-types";
+import type { SynthesisInput } from "@/lib/engine/synthesis";
 
-function erepo(owner: string, name: string, tools: string[]): ExtractedRepo {
-  return { fullName: `${owner}/${name}`, owner, pushedAt: new Date("2026-06-01T00:00:00Z"), tools: new Set(tools), description: "", topics: [] };
+function erepo(owner: string, name: string, tools: string[], description = ""): ExtractedRepo {
+  return {
+    fullName: `${owner}/${name}`,
+    owner,
+    pushedAt: new Date("2026-06-01T00:00:00Z"),
+    tools: new Set(tools),
+    description,
+    topics: [],
+  };
 }
 
-const stubDeps = {
-  harvest: async (u: string) => (u === "alice" ? [erepo("alice", "agent", ["fastapi", "langchain"])] : []),
-  readmesFor: async (_repos: ExtractedRepo[]) => [["alice/agent", "alice", "an agent project"]] as [string, string, string][],
-  inferReadme: async (text: string) => (text.includes("agent") ? ["mcp server"] : []),
+const cannedResult: AnalysisResult = {
+  goal: "founding-engineer",
+  generatedAt: "2026-06-13T00:00:00Z",
+  targetsAnalyzed: 1,
+  summary: "You are strong on ML but read as a researcher, not a builder.",
+  concepts: [
+    {
+      id: "agent-orchestration",
+      name: "Agent orchestration",
+      stage: "current-frontier",
+      youHave: "missing",
+      importanceForGoal: 5,
+      evidence: [],
+      relationships: [],
+    },
+  ],
+  learningPath: [
+    {
+      conceptId: "agent-orchestration",
+      rank: 1,
+      whyNow: "frontier",
+      whatToLearn: "build a multi-agent loop",
+      resources: [],
+      project: "build an orchestrator",
+    },
+  ],
+  projectGaps: [{ theme: "agent eval harness", seenIn: ["alice/agent"], suggestion: "build one" }],
+  positioning: {
+    currentSignal: "researcher-leaning",
+    evidence: ["papers"],
+    targetSignal: "builder/shipper",
+    gap: "research overshadows shipping",
+    moves: ["foreground 0→1 work"],
+  },
+  baseline: { tools: ["fastapi", "pytorch"] },
 };
 
-describe("runAnalysis", () => {
-  it("streams progress then a result with tool + methodology gaps", async () => {
-    const events: any[] = [];
-    for await (const e of runAnalysis(stubDeps, { baseline: { tools: ["fastapi"] }, handles: ["alice"], role: "ai-engineer" }))
-      events.push(e);
-    const result = events.find((e) => e.type === "result");
-    expect(events.some((e) => e.type === "progress")).toBe(true);
-    const ids = result.report.gaps.map((g: any) => g.id);
-    expect(ids).toContain("langchain");      // tool gap (fastapi filtered by baseline)
-    expect(ids).toContain("mcp server");      // methodology gap
-    expect(ids).not.toContain("fastapi");
-  });
-});
+describe("runGoalAnalysis", () => {
+  it("merges own-repo tools with resumeSkills into the synthesis baseline", async () => {
+    let capturedInput: SynthesisInput | undefined;
 
-describe("analyzeToReport", () => {
-  it("returns a report whose gaps include expected ids", async () => {
-    const report = await analyzeToReport(stubDeps, { baseline: { tools: ["fastapi"] }, handles: ["alice"], role: "ai-engineer" });
-    const ids = report.gaps.map((g) => g.id);
-    expect(ids).toContain("langchain");
-    expect(ids).toContain("mcp server");
-    expect(ids).not.toContain("fastapi");
-    expect(report.meta.targetsAnalyzed).toBe(1);
+    const deps = {
+      harvest: async (u: string) =>
+        u === "me"
+          ? [erepo("me", "my-api", ["fastapi", "docker"], "my api project")]
+          : [erepo("alice", "agent", ["langchain", "openai"], "an agent")],
+      inferReadme: async (_text: string) => ["rag"],
+      synthesize: async (input: SynthesisInput): Promise<AnalysisResult> => {
+        capturedInput = input;
+        return { ...cannedResult };
+      },
+    };
+
+    const result = await runGoalAnalysis(deps, {
+      resumeSkills: ["pytorch", "numpy"],
+      githubUsername: "me",
+      goal: "founding-engineer",
+      handles: ["alice"],
+    });
+
+    // Assert own-repo tools + resumeSkills all merged into baseline
+    expect(capturedInput).toBeDefined();
+    const baselineTools = capturedInput!.baselineTools;
+    expect(baselineTools).toContain("pytorch");   // from resumeSkills
+    expect(baselineTools).toContain("numpy");      // from resumeSkills
+    expect(baselineTools).toContain("fastapi");    // from own repo
+    expect(baselineTools).toContain("docker");     // from own repo
+
+    // Assert result has concepts + positioning
+    expect(result.concepts.length).toBeGreaterThan(0);
+    expect(result.concepts[0].id).toBe("agent-orchestration");
+    expect(result.positioning).toBeDefined();
+    expect(result.positioning.currentSignal).toBe("researcher-leaning");
+
+    // Assert targetsAnalyzed matches the number of handles
+    expect(result.targetsAnalyzed).toBe(1);
+  });
+
+  it("respects BOUNDS.MAX_PEOPLE and caps handles", async () => {
+    const harvested: string[] = [];
+
+    const deps = {
+      harvest: async (u: string) => {
+        harvested.push(u);
+        return [erepo(u, "repo", ["go"])];
+      },
+      inferReadme: async () => [],
+      synthesize: async (_input: SynthesisInput): Promise<AnalysisResult> => ({
+        ...cannedResult,
+      }),
+    };
+
+    // Pass more handles than MAX_PEOPLE (5)
+    const manyHandles = ["a", "b", "c", "d", "e", "f", "g"];
+    await runGoalAnalysis(deps, {
+      resumeSkills: [],
+      githubUsername: "me",
+      goal: "founding-engineer",
+      handles: manyHandles,
+    });
+
+    // "me" is harvested first (own repos), then at most MAX_PEOPLE targets
+    const targetHarvests = harvested.filter((u) => u !== "me");
+    expect(targetHarvests.length).toBeLessThanOrEqual(5);
+  });
+
+  it("includes own projects in yourProjects from own repos", async () => {
+    let capturedInput: SynthesisInput | undefined;
+
+    const deps = {
+      harvest: async (u: string) =>
+        u === "me"
+          ? [erepo("me", "cool-project", ["rust"], "a cool rust project")]
+          : [],
+      inferReadme: async () => [],
+      synthesize: async (input: SynthesisInput): Promise<AnalysisResult> => {
+        capturedInput = input;
+        return { ...cannedResult };
+      },
+    };
+
+    await runGoalAnalysis(deps, {
+      resumeSkills: [],
+      githubUsername: "me",
+      goal: "founding-engineer",
+      handles: [],
+    });
+
+    expect(capturedInput!.yourProjects).toContainEqual({
+      name: "cool-project",
+      description: "a cool rust project",
+    });
   });
 });

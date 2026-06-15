@@ -2,12 +2,31 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { harvestUser, realGithub } from "@/lib/engine/github";
 import { extractJSON } from "@/lib/engine/anthropic";
+import { synthesize } from "@/lib/engine/synthesis";
 import { BOUNDS } from "@/lib/engine/config";
-import { mapPool } from "@/lib/engine/concurrency";
-import { analyzeToReport } from "./_helpers";
+import { runGoalAnalysis } from "./_helpers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+/** Call the Anthropic API and return the parsed JSON object (no strict schema gate here —
+ *  synthesize validates with AnalysisResultSchema). */
+async function extractJSONRaw(
+  client: Anthropic,
+  system: string,
+  user: string,
+): Promise<unknown> {
+  const msg = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    system: system + " Respond with ONLY valid minified JSON, no prose, no code fences.",
+    messages: [{ role: "user", content: user }],
+  });
+  const block = (msg.content ?? []).find((b: any) => b.type === "text") as any;
+  let t = (block?.text ?? "").trim();
+  if (t.startsWith("```")) t = t.replace(/^```(?:json)?\s*/i, "").replace(/```$/m, "").trim();
+  return JSON.parse(t);
+}
 
 export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -29,30 +48,35 @@ export async function POST(req: Request) {
       harvest: (u: string) =>
         harvestUser(github, u, { topN: BOUNDS.MAX_REPOS_PER_PERSON }),
 
-      readmesFor: async (repos: Awaited<ReturnType<typeof harvestUser>>) => {
-        const slice = repos.slice(0, BOUNDS.MAX_READMES);
-        const results = await mapPool(slice, BOUNDS.CONCURRENCY, async (r) => {
-          const repoName = r.fullName.split("/").pop()!;
-          const text = await github.getFile(r.owner, repoName, "README.md");
-          if (!text) return null;
-          return [r.fullName, r.owner, text] as [string, string, string];
-        });
-        return results.filter((x): x is [string, string, string] => x !== null);
-      },
-
       inferReadme: async (text: string): Promise<string[]> => {
         const result = await extractJSON(client, {
           system:
-            "List the engineering methodologies/patterns this README's project uses (e.g. 'mcp server','rag','agent orchestration'). Open-ended; lowercase short noun phrases.",
+            "List the engineering methodologies/patterns this text describes (e.g. 'mcp server','rag','agent orchestration'). Open-ended; lowercase short noun phrases.",
           user: text,
           schema: z.object({ tags: z.array(z.string()) }),
         });
         return result.tags;
       },
+
+      synthesize: (input: Parameters<typeof synthesize>[1]) =>
+        synthesize(
+          {
+            generate: ({ system, user }) => extractJSONRaw(client, system, user),
+            verify: async (url: string) => {
+              try {
+                const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+                return res.ok;
+              } catch {
+                return false;
+              }
+            },
+          },
+          input,
+        ),
     };
 
-    const report = await analyzeToReport(deps, body);
-    return Response.json(report);
+    const result = await runGoalAnalysis(deps, body);
+    return Response.json(result);
   } catch (e: any) {
     return Response.json({ error: e.message ?? String(e) }, { status: 500 });
   }
