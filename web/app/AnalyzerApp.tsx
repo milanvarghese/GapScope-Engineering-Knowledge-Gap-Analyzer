@@ -12,6 +12,7 @@ import PositioningPanel from "@/components/PositioningPanel";
 import DomainMap from "@/components/DomainMap";
 import LearningPath from "@/components/LearningPath";
 import ProjectGaps from "@/components/ProjectGaps";
+import ComparisonsSection from "@/components/ComparisonsSection";
 import { presetById } from "@/lib/engine/goals";
 
 type Phase = "setup" | "running" | "results";
@@ -123,6 +124,9 @@ export default function AnalyzerApp() {
 
           {/* Project gaps */}
           <ProjectGaps gaps={result.projectGaps} />
+
+          {/* Per-profile comparisons */}
+          <ComparisonsSection comparisons={result.comparisons} />
 
           {/* Caveat footer */}
           <div className="border-t border-[var(--rule)] pt-6 pb-10">

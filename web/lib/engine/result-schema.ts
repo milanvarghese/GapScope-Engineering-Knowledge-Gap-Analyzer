@@ -6,9 +6,19 @@ export const ConceptSchema = z.object({ id: z.string(), name: z.string(), stage:
 export const ResourceSchema = z.object({ title: z.string(), url: z.string(), verified: z.boolean() });
 export const PathStepSchema = z.object({ conceptId: z.string(), rank: z.number(), whyNow: z.string(), whatToLearn: z.string(), resources: z.array(ResourceSchema), project: z.string() });
 export const PositioningSchema = z.object({ currentSignal: z.string(), evidence: z.array(z.string()), targetSignal: z.string(), gap: z.string(), moves: z.array(z.string()) });
+export const ComparisonSchema = z.object({
+  handle: z.string(),
+  theirSignal: z.string(),
+  theyHaveYouDont: z.array(z.string()),
+  youHaveTheyDont: z.array(z.string()),
+  shared: z.array(z.string()),
+  notableProjects: z.array(z.string()),
+  takeaway: z.string(),
+});
 export const AnalysisResultSchema = z.object({
   goal: z.string(), generatedAt: z.string(), targetsAnalyzed: z.number(), summary: z.string(),
   concepts: z.array(ConceptSchema), learningPath: z.array(PathStepSchema),
   projectGaps: z.array(z.object({ theme: z.string(), seenIn: z.array(z.string()), suggestion: z.string() })),
   positioning: PositioningSchema, baseline: z.object({ tools: z.array(z.string()) }),
+  comparisons: z.array(ComparisonSchema),
 });

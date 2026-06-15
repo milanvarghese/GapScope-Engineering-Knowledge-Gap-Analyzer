@@ -50,6 +50,7 @@ const cannedResult: AnalysisResult = {
     moves: ["foreground 0→1 work"],
   },
   baseline: { tools: ["fastapi", "pytorch"] },
+  comparisons: [{ handle: "alice", theirSignal: "builder", theyHaveYouDont: ["orchestration"], youHaveTheyDont: ["research"], shared: ["python"], notableProjects: ["agent-x"], takeaway: "Alice is ahead on orchestration." }],
 };
 
 describe("runGoalAnalysis", () => {

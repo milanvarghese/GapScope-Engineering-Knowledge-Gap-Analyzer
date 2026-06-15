@@ -12,6 +12,7 @@ const sample = {
   positioning: { currentSignal: "researcher-leaning", evidence: ["papers"], targetSignal: "builder/shipper",
     gap: "research overshadows shipping", moves: ["foreground 0→1 work"] },
   baseline: { tools: ["fastapi", "pytorch"] },
+  comparisons: [{ handle: "alice", theirSignal: "builder", theyHaveYouDont: ["orchestration"], youHaveTheyDont: ["research"], shared: ["python"], notableProjects: ["agent-x"], takeaway: "Alice is ahead on orchestration." }],
 };
 
 describe("AnalysisResultSchema", () => {

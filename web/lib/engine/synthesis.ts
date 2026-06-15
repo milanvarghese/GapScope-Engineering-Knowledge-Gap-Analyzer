@@ -92,6 +92,7 @@ Rules:
 - Return at MOST 8 learningPath items.
 - Return at MOST 4 projectGaps.
 - Keep "summary" to 2–3 sentences; each "whyNow"/"whatToLearn" to one sentence; at most 2 resources per learning-path item; "positioning.moves" at most 4.
+- Produce a "comparisons" array with one entry per target handle in the input. Each entry compares the user's baseline+projects against that target's tools/methodologies/projects. Fill: "theirSignal" (their direction, e.g. "builder/shipper" or "researcher"), "theyHaveYouDont" (≤5 concepts/tools/skills they have that the user lacks), "youHaveTheyDont" (≤5 concepts/tools where the user has an edge), "shared" (≤5 common-ground items), "notableProjects" (≤3 standout project names or short phrases), and "takeaway" (one-line summary of the comparison). Keep it grounded in the provided evidence.
 - Respond with valid JSON only, no markdown, no explanation.
 
 Output schema:
@@ -125,7 +126,16 @@ Output schema:
     "gap": string,
     "moves": string[]
   },
-  "baseline": { "tools": string[] }
+  "baseline": { "tools": string[] },
+  "comparisons": [{
+    "handle": string,
+    "theirSignal": string,
+    "theyHaveYouDont": string[] (<=5),
+    "youHaveTheyDont": string[] (<=5),
+    "shared": string[] (<=5),
+    "notableProjects": string[] (<=3),
+    "takeaway": string
+  }]
 }`;
 }
 

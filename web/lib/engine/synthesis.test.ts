@@ -14,6 +14,7 @@ const raw = {
   ],
   projectGaps: [], positioning: { currentSignal: "x", evidence: [], targetSignal: "y", gap: "g", moves: [] },
   baseline: { tools: [] },
+  comparisons: [{ handle: "alice", theirSignal: "builder", theyHaveYouDont: ["orchestration"], youHaveTheyDont: ["research"], shared: ["python"], notableProjects: ["agent-x"], takeaway: "Alice is ahead on orchestration." }],
 };
 
 describe("synthesis", () => {
