@@ -7,6 +7,11 @@ import { uploadResume, analyze } from "@/lib/client";
 import ResumeUpload from "@/components/ResumeUpload";
 import SkillChips from "@/components/SkillChips";
 import TargetPicker from "@/components/TargetPicker";
+import PositioningPanel from "@/components/PositioningPanel";
+import DomainMap from "@/components/DomainMap";
+import LearningPath from "@/components/LearningPath";
+import ProjectGaps from "@/components/ProjectGaps";
+import { presetById } from "@/lib/engine/goals";
 
 type Phase = "setup" | "running" | "results";
 
@@ -63,10 +68,17 @@ export default function AnalyzerApp() {
 
   // ── results ──────────────────────────────────────────────────────────────
   if (phase === "results" && result) {
+    const goalLabel = presetById(result.goal)?.label ?? result.goal;
+    const dateFormatted = new Date(result.generatedAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
     return (
-      <div>
-        {/* Back button strip */}
-        <div className="border-b border-[var(--rule)] bg-[var(--canvas-2)] px-5 py-2 flex items-center gap-4">
+      <div className="min-h-screen bg-[var(--canvas)]">
+        {/* Nav strip */}
+        <div className="border-b border-[var(--rule)] bg-[var(--canvas-2)] px-5 py-2 flex items-center gap-4 sticky top-0 z-10">
           <button
             onClick={handleReset}
             className="font-mono text-xs text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors duration-150 flex items-center gap-1.5"
@@ -74,10 +86,51 @@ export default function AnalyzerApp() {
             ← New analysis
           </button>
         </div>
-        <div className="max-w-2xl mx-auto px-5 py-8">
-          <pre className="font-mono text-xs text-[var(--ink-dim)] whitespace-pre-wrap break-all">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+
+        <div className="max-w-3xl mx-auto px-5 py-8 space-y-10">
+
+          {/* Goal banner */}
+          <div className="border border-[var(--rule-bright)] bg-[var(--canvas-2)]">
+            <div className="h-px bg-gradient-to-r from-[var(--amber)] via-[var(--amber-dim)] to-transparent" />
+            <div className="px-5 py-5">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
+                <h1 className="font-mono text-xl font-medium tracking-tight text-[var(--ink)]">
+                  Path to:{" "}
+                  <span className="text-[var(--amber)]">{goalLabel}</span>
+                </h1>
+                <div className="flex items-center gap-4 ml-auto">
+                  <span className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)]">
+                    {result.targetsAnalyzed} engineer{result.targetsAnalyzed !== 1 ? "s" : ""} analyzed
+                  </span>
+                  <span className="font-mono text-[10px] text-[var(--ink-muted)]">{dateFormatted}</span>
+                </div>
+              </div>
+              <p className="font-serif text-sm text-[var(--ink-dim)] leading-relaxed italic max-w-2xl">
+                {result.summary}
+              </p>
+            </div>
+          </div>
+
+          {/* Positioning — prominent, near top */}
+          <PositioningPanel positioning={result.positioning} />
+
+          {/* Domain map */}
+          <DomainMap concepts={result.concepts} />
+
+          {/* Learning path */}
+          <LearningPath learningPath={result.learningPath} concepts={result.concepts} />
+
+          {/* Project gaps */}
+          <ProjectGaps gaps={result.projectGaps} />
+
+          {/* Caveat footer */}
+          <div className="border-t border-[var(--rule)] pt-6 pb-10">
+            <p className="font-mono text-[10px] text-[var(--ink-muted)] leading-relaxed max-w-2xl">
+              This measures the skills + signal dimension of eligibility from public evidence.
+              Interview, system-design, and behavioral readiness are a separate axis.
+            </p>
+          </div>
+
         </div>
       </div>
     );
