@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AnalysisResult } from "@/lib/result-types";
 import { GOAL_PRESETS } from "@/lib/engine/goals";
 import { uploadResume, analyze } from "@/lib/client";
+import { normalizeHandle } from "@/lib/engine/handle";
 import ResumeUpload from "@/components/ResumeUpload";
 import SkillChips from "@/components/SkillChips";
 import TargetPicker from "@/components/TargetPicker";
@@ -51,7 +52,7 @@ export default function AnalyzerApp() {
     setPhase("running");
     setError(null);
     try {
-      const r = await analyze({ resumeSkills: skills, githubUsername: githubUsername.trim(), goal, handles });
+      const r = await analyze({ resumeSkills: skills, githubUsername: normalizeHandle(githubUsername), goal, handles: handles.map(normalizeHandle) });
       setResult(r);
       setPhase("results");
     } catch (e: unknown) {
@@ -190,7 +191,7 @@ export default function AnalyzerApp() {
             type="text"
             value={githubUsername}
             onChange={(e) => setGithubUsername(e.target.value)}
-            placeholder="your-github-username"
+            placeholder="username or github.com/username"
             aria-label="Your GitHub username"
             className="w-full bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 placeholder-[var(--ink-muted)] focus:outline-none focus:border-[var(--amber-dim)] transition-colors duration-150"
           />

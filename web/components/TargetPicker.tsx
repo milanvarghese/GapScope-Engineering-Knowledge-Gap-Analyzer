@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { normalizeHandle } from "@/lib/engine/handle";
 
 interface TargetPickerProps {
   handles: string[];
@@ -11,7 +12,7 @@ export default function TargetPicker({ handles, onHandles }: TargetPickerProps) 
   const [input, setInput] = useState("");
 
   function addHandle(raw: string) {
-    const v = raw.trim().replace(/^@/, "");
+    const v = normalizeHandle(raw);
     if (!v || handles.includes(v)) return;
     onHandles([...handles, v]);
   }
@@ -66,7 +67,7 @@ export default function TargetPicker({ handles, onHandles }: TargetPickerProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="@username (Enter to add)"
+            placeholder="@username or github.com/username (Enter to add)"
             aria-label="Add GitHub handle"
             className="flex-1 bg-[var(--canvas-3)] border border-[var(--rule-bright)] text-[var(--ink)] font-mono text-xs px-3 py-1.5 placeholder-[var(--ink-muted)] focus:outline-none focus:border-[var(--sage-dim)] transition-colors duration-150"
           />
