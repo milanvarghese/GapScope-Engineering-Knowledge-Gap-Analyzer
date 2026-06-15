@@ -40,5 +40,6 @@ export async function extractSkillsFromPdf(client: Anthropic, base64Pdf: string)
   const block = ((msg as any).content ?? []).find((b: any) => b.type === "text");
   let t = (block?.text ?? "").trim();
   if (t.startsWith("```")) t = t.replace(/^```(?:json)?\s*/i, "").replace(/```$/m, "").trim();
-  return z.object({ tools: z.array(z.string()) }).parse(JSON.parse(t)).tools.map((s) => s.toLowerCase());
+  const tools = z.object({ tools: z.array(z.string()) }).parse(JSON.parse(t)).tools.map((s) => s.toLowerCase().trim());
+  return Array.from(new Set(tools.filter(Boolean)));
 }

@@ -33,7 +33,7 @@ export default function SkillChips({ skills, onChange }: SkillChipsProps) {
   return (
     <div>
       <div className="flex flex-wrap gap-2 mb-3">
-        {skills.map((s) => (
+        {Array.from(new Set(skills)).map((s) => (
           <span
             key={s}
             className="inline-flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 bg-[var(--canvas-3)] border border-[var(--amber-dim)] text-[var(--amber)]"
