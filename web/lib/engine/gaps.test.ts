@@ -3,7 +3,7 @@ import { computeGaps } from "./gaps";
 import type { ExtractedRepo } from "./types";
 
 function erepo(owner: string, name: string, tools: string[], pushed: string): ExtractedRepo {
-  return { fullName: `${owner}/${name}`, owner, pushedAt: new Date(pushed), tools: new Set(tools) };
+  return { fullName: `${owner}/${name}`, owner, pushedAt: new Date(pushed), tools: new Set(tools), description: "", topics: [] };
 }
 
 describe("computeGaps", () => {

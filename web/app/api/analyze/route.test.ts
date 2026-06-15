@@ -3,7 +3,7 @@ import { runAnalysis, analyzeToReport } from "./_helpers";
 import type { ExtractedRepo } from "@/lib/engine/types";
 
 function erepo(owner: string, name: string, tools: string[]): ExtractedRepo {
-  return { fullName: `${owner}/${name}`, owner, pushedAt: new Date("2026-06-01T00:00:00Z"), tools: new Set(tools) };
+  return { fullName: `${owner}/${name}`, owner, pushedAt: new Date("2026-06-01T00:00:00Z"), tools: new Set(tools), description: "", topics: [] };
 }
 
 const stubDeps = {
