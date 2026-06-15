@@ -33,7 +33,7 @@ html {
   background-color: var(--canvas);
   color: var(--ink);
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 18px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -20,11 +20,11 @@ export default function LearningPath({ learningPath, concepts }: Props) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <span className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)]">
+        <span className="font-mono text-[11px] tracking-widest uppercase text-[var(--ink-muted)]">
           Learning path
         </span>
         <span className="flex-1 h-px bg-[var(--rule)]" />
-        <span className="font-mono text-[10px] text-[var(--ink-muted)]">
+        <span className="font-mono text-[11px] text-[var(--ink-muted)]">
           {learningPath.length} step{learningPath.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -84,7 +84,7 @@ export default function LearningPath({ learningPath, concepts }: Props) {
                 {/* Resources count */}
                 {verifiedResources.length > 0 && (
                   <span className="hidden sm:flex w-24 flex-none flex-col items-end justify-center px-4 py-3.5 border-l border-[var(--rule)]">
-                    <span className="font-mono text-[10px] text-[var(--ink-muted)] tracking-widest uppercase">
+                    <span className="font-mono text-[11px] text-[var(--ink-muted)] tracking-widest uppercase">
                       Links
                     </span>
                     <span className="font-mono text-xs text-[var(--ink-dim)]">
@@ -97,7 +97,7 @@ export default function LearningPath({ learningPath, concepts }: Props) {
                 <span className="w-10 flex-none flex items-center justify-center border-l border-[var(--rule)] py-3.5">
                   <span
                     className={[
-                      "font-mono text-[var(--ink-muted)] text-[10px] transition-transform duration-200",
+                      "font-mono text-[var(--ink-muted)] text-[11px] transition-transform duration-200",
                       isOpen ? "rotate-90" : "",
                     ].join(" ")}
                   >
@@ -112,7 +112,7 @@ export default function LearningPath({ learningPath, concepts }: Props) {
                   <div className="px-6 py-5 space-y-5">
                     {/* What to learn */}
                     <div>
-                      <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
+                      <h3 className="font-mono text-[11px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
                         What to learn
                       </h3>
                       <p className="font-serif text-sm text-[var(--ink-dim)] leading-relaxed italic max-w-3xl">
@@ -122,7 +122,7 @@ export default function LearningPath({ learningPath, concepts }: Props) {
 
                     {/* Project */}
                     <div>
-                      <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
+                      <h3 className="font-mono text-[11px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
                         Build
                       </h3>
                       <div className="flex gap-2 items-start">
@@ -136,7 +136,7 @@ export default function LearningPath({ learningPath, concepts }: Props) {
                     {/* Resources */}
                     {verifiedResources.length > 0 && (
                       <div>
-                        <h3 className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
+                        <h3 className="font-mono text-[11px] tracking-widest uppercase text-[var(--ink-muted)] mb-2">
                           Resources ({verifiedResources.length} verified)
                         </h3>
                         <ul className="space-y-1.5">

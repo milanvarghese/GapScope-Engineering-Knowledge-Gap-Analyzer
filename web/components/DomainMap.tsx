@@ -65,7 +65,7 @@ export default function DomainMap({ concepts }: Props) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <span className="font-mono text-[10px] tracking-widest uppercase text-[var(--ink-muted)]">
+        <span className="font-mono text-[11px] tracking-widest uppercase text-[var(--ink-muted)]">
           Domain map
         </span>
         <span className="flex-1 h-px bg-[var(--rule)]" />
@@ -73,10 +73,10 @@ export default function DomainMap({ concepts }: Props) {
         <div className="flex items-center gap-3">
           {(["solid", "partial", "missing"] as Have[]).map((h) => (
             <span key={h} className="flex items-center gap-1">
-              <span className={`font-mono text-[9px] ${HAVE_STYLE[h].chip.split(" ").find(c => c.startsWith("text-")) ?? ""}`}>
+              <span className={`font-mono text-[11px] ${HAVE_STYLE[h].chip.split(" ").find(c => c.startsWith("text-")) ?? ""}`}>
                 {HAVE_STYLE[h].marker}
               </span>
-              <span className="font-mono text-[9px] text-[var(--ink-muted)] tracking-widest uppercase">
+              <span className="font-mono text-[11px] text-[var(--ink-muted)] tracking-widest uppercase">
                 {h}
               </span>
             </span>
@@ -98,10 +98,10 @@ export default function DomainMap({ concepts }: Props) {
               ].join(" ")}
             >
               <div className={`w-1.5 h-1.5 rounded-full ${colors.dot} mb-0.5`} />
-              <span className={`font-mono text-[9px] tracking-widest uppercase ${colors.header}`}>
+              <span className={`font-mono text-[11px] tracking-widest uppercase ${colors.header}`}>
                 {STAGE_LABEL[stage]}
               </span>
-              <span className="font-mono text-[9px] text-[var(--ink-muted)]">
+              <span className="font-mono text-[11px] text-[var(--ink-muted)]">
                 {count} concept{count !== 1 ? "s" : ""}
               </span>
             </div>
@@ -119,13 +119,13 @@ export default function DomainMap({ concepts }: Props) {
           return (
             <div key={stage} className={`border ${colors.border} flex flex-col`}>
               <div className={`border-b ${colors.border} px-3 py-2`}>
-                <span className={`font-mono text-[10px] tracking-widest uppercase ${colors.header}`}>
+                <span className={`font-mono text-[11px] tracking-widest uppercase ${colors.header}`}>
                   {STAGE_LABEL[stage]}
                 </span>
               </div>
               <div className="px-3 py-2.5 flex flex-col gap-2 flex-1">
                 {cols.length === 0 ? (
-                  <span className="font-mono text-[10px] text-[var(--ink-faint)]">—</span>
+                  <span className="font-mono text-[11px] text-[var(--ink-faint)]">—</span>
                 ) : (
                   cols.map((c) => {
                     const haveStyle = HAVE_STYLE[c.youHave];
@@ -135,10 +135,10 @@ export default function DomainMap({ concepts }: Props) {
                         className={`border ${haveStyle.chip} px-2 py-1.5 flex items-start gap-1.5`}
                         title={`${c.youHave} · importance ${c.importanceForGoal}/5`}
                       >
-                        <span className="font-mono text-[10px] flex-none mt-0.5 leading-none">
+                        <span className="font-mono text-[11px] flex-none mt-0.5 leading-none">
                           {haveStyle.marker}
                         </span>
-                        <span className="font-sans text-[11px] leading-tight break-words min-w-0">
+                        <span className="font-sans text-[12px] leading-tight break-words min-w-0">
                           {c.name}
                         </span>
                       </div>
