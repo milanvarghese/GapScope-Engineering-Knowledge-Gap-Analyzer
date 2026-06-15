@@ -43,7 +43,7 @@ export async function harvestUser(
       if (text && !isDependencyDump(m, text)) for (const t of parseManifest(m, text)) tools.add(t);
     }
     if (tools.size === 0) continue;
-    out.push({ fullName: repo.full_name, owner: username, pushedAt: new Date(repo.pushed_at), tools });
+    out.push({ fullName: repo.full_name, owner: username, pushedAt: new Date(repo.pushed_at), tools, description: repo.description ?? "", topics: repo.topics ?? [] });
     if (out.length >= topN) break;
   }
   return out;

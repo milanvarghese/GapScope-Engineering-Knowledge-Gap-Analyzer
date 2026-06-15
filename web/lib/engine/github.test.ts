@@ -8,7 +8,8 @@ function repo(name: string, pushed: string, extra: object = {}) {
 describe("harvestUser", () => {
   it("filters forks/archived/no-manifest, recency-first, top_n", async () => {
     const repos: any = {
-      alice: [repo("fresh", "2026-06-01T00:00:00Z"), repo("forked", "2026-05-20T00:00:00Z", { fork: true }),
+      alice: [repo("fresh", "2026-06-01T00:00:00Z", { description: "An ML service", topics: ["python", "fastapi"] }),
+              repo("forked", "2026-05-20T00:00:00Z", { fork: true }),
               repo("arch", "2026-05-19T00:00:00Z", { archived: true }), repo("nomani", "2026-05-18T00:00:00Z"),
               repo("older", "2026-04-01T00:00:00Z")],
     };
@@ -23,5 +24,9 @@ describe("harvestUser", () => {
     const out = await harvestUser(deps, "alice", { topN: 10 });
     expect(out.map((r) => r.fullName)).toEqual(["alice/fresh", "alice/older"]);
     expect(out[0].tools).toEqual(new Set(["langchain", "fastapi"]));
+    expect(out[0].description).toBe("An ML service");
+    expect(out[0].topics).toEqual(["python", "fastapi"]);
+    expect(out[1].description).toBe("");
+    expect(out[1].topics).toEqual([]);
   });
 });

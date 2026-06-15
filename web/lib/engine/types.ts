@@ -3,4 +3,6 @@ export type ExtractedRepo = {
   owner: string;
   pushedAt: Date;
   tools: Set<string>;
+  description: string;
+  topics: string[];
 };
