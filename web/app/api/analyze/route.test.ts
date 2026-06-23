@@ -62,7 +62,6 @@ describe("runGoalAnalysis", () => {
         u === "me"
           ? [erepo("me", "my-api", ["fastapi", "docker"], "my api project")]
           : [erepo("alice", "agent", ["langchain", "openai"], "an agent")],
-      inferReadme: async (_text: string) => ["rag"],
       synthesize: async (input: SynthesisInput): Promise<AnalysisResult> => {
         capturedInput = input;
         return { ...cannedResult };
@@ -102,7 +101,6 @@ describe("runGoalAnalysis", () => {
         harvested.push(u);
         return [erepo(u, "repo", ["go"])];
       },
-      inferReadme: async () => [],
       synthesize: async (_input: SynthesisInput): Promise<AnalysisResult> => ({
         ...cannedResult,
       }),
@@ -130,7 +128,6 @@ describe("runGoalAnalysis", () => {
         u === "me"
           ? [erepo("me", "cool-project", ["rust"], "a cool rust project")]
           : [],
-      inferReadme: async () => [],
       synthesize: async (input: SynthesisInput): Promise<AnalysisResult> => {
         capturedInput = input;
         return { ...cannedResult };

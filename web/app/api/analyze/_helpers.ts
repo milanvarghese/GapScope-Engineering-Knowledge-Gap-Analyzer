@@ -7,7 +7,6 @@ import { mapPool } from "@/lib/engine/concurrency";
 
 export type GoalAnalysisDeps = {
   harvest(user: string): Promise<ExtractedRepo[]>;
-  inferReadme(text: string): Promise<string[]>;
   synthesize(input: SynthesisInput): Promise<AnalysisResult>;
 };
 
@@ -47,18 +46,6 @@ export async function runGoalAnalysis(
       } catch {
         repos = [];
       }
-      // Derive methodology tags from repo names+descriptions (no extra GitHub calls)
-      const summaryText = repos
-        .map((r) => `${r.fullName.split("/").pop()} ${r.description}`)
-        .join(". ");
-      let methodologies: string[] = [];
-      if (summaryText.trim()) {
-        try {
-          methodologies = await deps.inferReadme(summaryText);
-        } catch {
-          methodologies = [];
-        }
-      }
       const tools = Array.from(
         new Set(repos.flatMap((r) => Array.from(r.tools))),
       );
@@ -66,7 +53,7 @@ export async function runGoalAnalysis(
         name: r.fullName.split("/").pop()!,
         description: r.description,
       }));
-      return { handle, tools, methodologies, projects };
+      return { handle, tools, projects };
     },
   );
 

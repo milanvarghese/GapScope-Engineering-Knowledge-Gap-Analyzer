@@ -17,4 +17,4 @@ export const DOCS_REGISTRY: Record<string, string> = {
 };
 
 // Bounding to fit Vercel Hobby's 60s function cap (see spec §4).
-export const BOUNDS = { MAX_PEOPLE: 5, MAX_REPOS_PER_PERSON: 4, MAX_READMES: 6, CONCURRENCY: 6 };
+export const BOUNDS = { MAX_PEOPLE: 4, MAX_REPOS_PER_PERSON: 3, MAX_READMES: 6, CONCURRENCY: 8 };

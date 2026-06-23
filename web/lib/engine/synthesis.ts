@@ -10,7 +10,6 @@ export interface SynthesisInput {
   targets: {
     handle: string;
     tools: string[];
-    methodologies: string[];
     projects: { name: string; description: string }[];
   }[];
 }
@@ -88,11 +87,11 @@ Rules:
 - "positioning" compares the user's *signal* (e.g., researcher vs builder) to the expectedSignal for the goal role.
 - "projectGaps" are themes present in target engineers' projects that are absent from the user's work.
 - Resources must be real, official documentation URLs (docs.python.org, pytorch.org, etc.) — not blog posts or tutorials.
-- Return at MOST 14 concepts (the most important for the goal).
-- Return at MOST 8 learningPath items.
+- Return at MOST 12 concepts (the most important for the goal).
+- Return at MOST 7 learningPath items.
 - Return at MOST 4 projectGaps.
 - Keep "summary" to 2–3 sentences; each "whyNow"/"whatToLearn" to one sentence; at most 2 resources per learning-path item; "positioning.moves" at most 4.
-- Produce a "comparisons" array with one entry per target handle in the input. Each entry compares the user's baseline+projects against that target's tools/methodologies/projects. Fill: "theirSignal" (their direction, e.g. "builder/shipper" or "researcher"), "theyHaveYouDont" (≤5 concepts/tools/skills they have that the user lacks), "youHaveTheyDont" (≤5 concepts/tools where the user has an edge), "shared" (≤5 common-ground items), "notableProjects" (≤3 standout project names or short phrases), and "takeaway" (one-line summary of the comparison). Keep it grounded in the provided evidence.
+- Produce a "comparisons" array with one entry per target handle in the input. Each entry compares the user's baseline+projects against that target's tools+projects. Infer each target's direction/methodologies yourself from their tools and project titles/descriptions. Fill: "theirSignal" (their direction, e.g. "builder/shipper" or "researcher"), "theyHaveYouDont" (≤4 concepts/tools/skills they have that the user lacks), "youHaveTheyDont" (≤4 concepts/tools where the user has an edge), "shared" (≤4 common-ground items), "notableProjects" (≤3 standout project names or short phrases), and "takeaway" (one-line summary of the comparison). Keep it grounded in the provided evidence.
 - Respond with valid JSON only, no markdown, no explanation.
 
 Output schema:
@@ -154,7 +153,6 @@ export function buildUserPrompt(input: SynthesisInput): string {
           [
             `Handle: ${t.handle}`,
             `  Tools: ${t.tools.join(", ") || "none"}`,
-            `  Methodologies: ${t.methodologies.join(", ") || "none"}`,
             `  Projects:`,
             ...(t.projects.length
               ? t.projects.map((p) => `    - ${p.name}: ${p.description || "(no description)"}`)

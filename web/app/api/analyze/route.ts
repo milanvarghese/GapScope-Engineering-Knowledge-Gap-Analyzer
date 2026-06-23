@@ -1,7 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
 import { harvestUser, realGithub } from "@/lib/engine/github";
-import { extractJSON } from "@/lib/engine/anthropic";
 import { synthesize } from "@/lib/engine/synthesis";
 import { BOUNDS } from "@/lib/engine/config";
 import { runGoalAnalysis } from "./_helpers";
@@ -18,7 +16,7 @@ async function extractJSONRaw(
 ): Promise<unknown> {
   const msg = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 12000,
+    max_tokens: 7000,
     system: system + " Respond with ONLY valid minified JSON, no prose, no code fences.",
     messages: [{ role: "user", content: user }],
   });
@@ -47,16 +45,6 @@ export async function POST(req: Request) {
     const deps = {
       harvest: (u: string) =>
         harvestUser(github, u, { topN: BOUNDS.MAX_REPOS_PER_PERSON }),
-
-      inferReadme: async (text: string): Promise<string[]> => {
-        const result = await extractJSON(client, {
-          system:
-            "List the engineering methodologies/patterns this text describes (e.g. 'mcp server','rag','agent orchestration'). Open-ended; lowercase short noun phrases.",
-          user: text,
-          schema: z.object({ tags: z.array(z.string()) }),
-        });
-        return result.tags;
-      },
 
       synthesize: (input: Parameters<typeof synthesize>[1]) =>
         synthesize(

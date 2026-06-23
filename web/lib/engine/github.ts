@@ -1,4 +1,5 @@
 import { parseManifest, isDependencyDump, MANIFEST_NAMES } from "./manifests";
+import { mapPool } from "./concurrency";
 import type { ExtractedRepo } from "./types";
 
 const API = "https://api.github.com";
@@ -30,21 +31,38 @@ export function realGithub(token?: string): GithubDeps {
 export async function harvestUser(
   deps: GithubDeps,
   username: string,
-  opts: { topN?: number; manifests?: string[] } = {},
+  opts: { topN?: number; maxProbe?: number; manifests?: string[] } = {},
 ): Promise<ExtractedRepo[]> {
   const topN = opts.topN ?? 5;
+  const maxProbe = opts.maxProbe ?? 8;
   const manifests = opts.manifests ?? MANIFEST_NAMES;
-  const out: ExtractedRepo[] = [];
-  for (const repo of await deps.listRepos(username)) {
-    if (repo.fork || repo.archived) continue;
+
+  const allRepos = await deps.listRepos(username);
+  const candidates = allRepos.filter((r) => !r.fork && !r.archived).slice(0, maxProbe);
+
+  const probed = await mapPool(candidates, 8, async (repo) => {
+    const texts = await mapPool(manifests, 3, (m) =>
+      deps.getFile(repo.owner.login, repo.name, m),
+    );
     const tools = new Set<string>();
-    for (const m of manifests) {
-      const text = await deps.getFile(repo.owner.login, repo.name, m);
-      if (text && !isDependencyDump(m, text)) for (const t of parseManifest(m, text)) tools.add(t);
+    for (let i = 0; i < manifests.length; i++) {
+      const text = texts[i];
+      if (text && !isDependencyDump(manifests[i], text)) {
+        for (const t of parseManifest(manifests[i], text)) tools.add(t);
+      }
     }
-    if (tools.size === 0) continue;
-    out.push({ fullName: repo.full_name, owner: username, pushedAt: new Date(repo.pushed_at), tools, description: repo.description ?? "", topics: repo.topics ?? [] });
-    if (out.length >= topN) break;
-  }
-  return out;
+    return tools.size > 0 ? { repo, tools } : null;
+  });
+
+  return probed
+    .filter((x): x is { repo: any; tools: Set<string> } => x !== null)
+    .slice(0, topN)
+    .map(({ repo, tools }) => ({
+      fullName: repo.full_name,
+      owner: username,
+      pushedAt: new Date(repo.pushed_at),
+      tools,
+      description: repo.description ?? "",
+      topics: repo.topics ?? [],
+    }));
 }
