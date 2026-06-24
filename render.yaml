@@ -1,0 +1,21 @@
+# Render Blueprint — runs the GapScope Next.js app as a persistent Node web service.
+# Unlike Vercel serverless functions, a Render web service has NO per-request timeout,
+# so the long (40–90s) /api/analyze synthesis call completes without a 504.
+#
+# Deploy: Render Dashboard → New → Blueprint → connect this repo → it reads this file.
+# Then set the two secret env vars (ANTHROPIC_API_KEY, GITHUB_TOKEN) in the dashboard.
+services:
+  - type: web
+    name: gapscope
+    runtime: node
+    rootDir: web
+    plan: free            # free sleeps after 15min idle (cold start ~50s); use "starter" ($7/mo) to stay warm
+    buildCommand: npm install && npm run build
+    startCommand: npm start   # next start; binds to Render's $PORT automatically
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: ANTHROPIC_API_KEY
+        sync: false        # set in the Render dashboard (secret)
+      - key: GITHUB_TOKEN
+        sync: false        # set in the Render dashboard (secret)
