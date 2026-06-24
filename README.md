@@ -2,6 +2,8 @@
 
 **Pick where you want to be and who's already there — GapScope shows you the path.**
 
+**🔗 Live demo: https://gapscope.onrender.com**
+
 GapScope is a goal-directed career-gap analyzer. You give it your résumé, your GitHub, a
 goal (e.g. *founding engineer*), and a few engineers who already embody that goal. It mines
 real evidence from their public repos, grounds it with an LLM that knows the field's
@@ -63,10 +65,12 @@ profiles (frontier engineers and/or friends) → **Analyze**.
 
 ## Deploy
 
-The app deploys to Vercel as-is (root directory `web/`). Set `ANTHROPIC_API_KEY` and
-`GITHUB_TOKEN` as project environment variables. See `DEPLOY.md`. Note: a full synthesis run is
-a single heavy LLM call — on Vercel's free tier (60s function cap) keep target counts modest, or
-use Vercel Pro for longer runs.
+The live deployment runs on **Render** — https://gapscope.onrender.com — as a persistent Node
+web service (see `render.yaml`). A full analysis is a single heavy LLM call that can take 30–90s;
+Render has no per-request timeout, so it completes reliably (Vercel's serverless 60s function cap
+makes it unsuitable for this workload). Set `ANTHROPIC_API_KEY` and `GITHUB_TOKEN` as the
+service's environment variables. On Render's free tier the instance sleeps after idle and
+cold-starts (~50s on the first request); a paid instance stays warm.
 
 ## Roadmap
 
