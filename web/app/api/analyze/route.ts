@@ -15,8 +15,8 @@ async function extractJSONRaw(
   user: string,
 ): Promise<unknown> {
   const msg = await client.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 4500,
+    model: "claude-sonnet-4-6",
+    max_tokens: 8000,
     system: system + " Respond with ONLY valid minified JSON, no prose, no code fences.",
     messages: [{ role: "user", content: user }],
   });

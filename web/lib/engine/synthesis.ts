@@ -29,15 +29,9 @@ export const STAGE_WEIGHT: Record<string, number> = {
 export function orderLearningPath(concepts: Concept[], path: PathStep[]): PathStep[] {
   const conceptMap = new Map<string, Concept>(concepts.map((c) => [c.id, c]));
 
-  // Score each step by stageWeight * importanceForGoal desc
-  const scored = path.map((step) => {
-    const concept = conceptMap.get(step.conceptId);
-    const weight = concept ? (STAGE_WEIGHT[concept.stage] ?? 1) * concept.importanceForGoal : 0;
-    return { step, weight };
-  });
-  scored.sort((a, b) => b.weight - a.weight);
-
-  const arr = scored.map((s) => ({ ...s.step }));
+  // Sort by model-provided rank ascending (trust the model's pedagogical order:
+  // foundations first, then frontier, then emerging)
+  const arr = [...path].sort((a, b) => a.rank - b.rank).map((s) => ({ ...s }));
 
   // Build set of conceptIds present in the path for prerequisite resolution
   const pathIds = new Set(arr.map((s) => s.conceptId));
@@ -87,11 +81,13 @@ Rules:
 - "positioning" compares the user's *signal* (e.g., researcher vs builder) to the expectedSignal for the goal role.
 - "projectGaps" are themes present in target engineers' projects that are absent from the user's work.
 - Resources must be real, official documentation URLs (docs.python.org, pytorch.org, etc.) — not blog posts or tutorials.
-- Return at MOST 10 concepts (the most important for the goal).
-- Return at MOST 6 learningPath items.
-- Return at MOST 3 projectGaps.
+- Return at MOST 14 concepts (the most important for the goal).
+- Return at MOST 8 learningPath items. Do NOT include fading concepts in the learning path.
+- Return at MOST 4 projectGaps.
 - Keep "summary" to 2 sentences; each "whyNow"/"whatToLearn" to one short sentence; at most 2 resources per learning-path item; "positioning.moves" at most 3.
-- Produce a "comparisons" array with one entry per target handle in the input. Each entry compares the user's baseline+projects against that target's tools+projects. Infer each target's direction/methodologies yourself from their tools and project titles/descriptions. Fill: "theirSignal" (their direction, e.g. "builder/shipper" or "researcher"), "theyHaveYouDont" (≤3 concepts/tools/skills they have that the user lacks), "youHaveTheyDont" (≤3 concepts/tools where the user has an edge), "shared" (≤3 common-ground items), "notableProjects" (≤3 standout project names or short phrases), and "takeaway" (one-line summary of the comparison). Keep it grounded in the provided evidence.
+- Identify concepts that are becoming commoditized or losing differentiation value for this goal and mark them stage: fading — the trajectory should not be one-sided. Most fields have something fading (e.g. techniques now table-stakes or superseded). Only omit fading if genuinely nothing qualifies.
+- Order learningPath as a sequence the person should follow: foundational/table-stakes and any prerequisites first, then current-frontier, then emerging. Do NOT include fading concepts in the learning path. Set each item's rank to its position in that sequence (1 = do first).
+- Produce a "comparisons" array with one entry per target handle in the input. Each entry compares the user's baseline+projects against that target's tools+projects. Infer each target's direction/methodologies yourself from their tools and project titles/descriptions. Fill: "theirSignal" (their direction, e.g. "builder/shipper" or "researcher"), "theyHaveYouDont" (≤4 concepts/tools/skills they have that the user lacks), "youHaveTheyDont" (≤4 concepts/tools where the user has an edge), "shared" (≤4 common-ground items), "notableProjects" (≤3 standout project names or short phrases), and "takeaway" (one-line summary of the comparison). Keep it grounded in the provided evidence.
 - Respond with valid JSON only, no markdown, no explanation.
 
 Output schema:

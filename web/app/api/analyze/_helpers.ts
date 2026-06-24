@@ -73,7 +73,9 @@ export async function runGoalAnalysis(
   // 4. Synthesize
   const result = await deps.synthesize(input);
 
-  // Ensure targetsAnalyzed is set
+  // Overwrite model-provided date with the real server timestamp
+  result.generatedAt = new Date().toISOString();
+  // Ensure targetsAnalyzed is set from actual data, not trusted from LLM
   result.targetsAnalyzed = targetResults.length;
 
   return result;

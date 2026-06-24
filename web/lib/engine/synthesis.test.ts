@@ -18,7 +18,7 @@ const raw = {
 };
 
 describe("synthesis", () => {
-  it("orders prerequisite before dependent and by stage*importance", () => {
+  it("orders by model-provided rank then enforces prerequisite before dependent", () => {
     const ordered = orderLearningPath(raw.concepts as any, raw.learningPath as any);
     expect(ordered.map((s) => s.conceptId)).toEqual(["orch", "evals"]); // orch is prerequisite-of evals
     expect(ordered[0].rank).toBe(1);
